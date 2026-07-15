@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
             AgentSeeder::class,
             ActivityLogSeeder::class,
             TicketSeeder::class,
+            ArticleSeeder::class,
+            BillingItemSeeder::class,
         ]);
     }
 }
