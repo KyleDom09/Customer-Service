@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\BillingItemController;
+use App\Http\Controllers\ArticleController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -28,5 +30,22 @@ Route::prefix('customer-service')->group(function () {
 
     // Notifications
     Route::post('/notifications/mark-read', [ActivityLogController::class, 'markAllRead']);
+
+    // Self-Service Portal
+    Route::prefix('self-service')->group(function () {
+
+        Route::get('/', function () {
+            return view('selfserviceportal');
+        });
+
+        Route::get('/billing-items', [BillingItemController::class, 'index']);
+        Route::post('/billing-items', [BillingItemController::class, 'store']);
+        Route::patch('/billing-items/{billingItem}/rate', [BillingItemController::class, 'rate']);
+
+        Route::get('/articles', [ArticleController::class, 'index']);
+        Route::post('/articles', [ArticleController::class, 'store']);
+        Route::patch('/articles/{article}/rate', [ArticleController::class, 'rate']);
+
+    });
 
 });
