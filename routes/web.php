@@ -62,13 +62,13 @@ Route::prefix('customer-service')->group(function () {
 
     // SLA Tracking
     Route::prefix('sla-tracking')->group(function () {
- 
-    Route::get('/', [SlaController::class, 'index']);
-    Route::post('/rules', [SlaController::class, 'storeRule']);
-    Route::put('/rules/{id}', [SlaController::class, 'updateRule']);
-    Route::delete('/rules/{id}', [SlaController::class, 'destroyRule']);
-    Route::post('/calendar', [SlaController::class, 'updateCalendar']);
- 
+
+        Route::get('/', [SlaController::class, 'index']);
+        Route::post('/rules', [SlaController::class, 'storeRule']);
+        Route::put('/rules/{id}', [SlaController::class, 'updateRule']);
+        Route::delete('/rules/{id}', [SlaController::class, 'destroyRule']);
+        Route::post('/calendar', [SlaController::class, 'updateCalendar']);
+
     });
 
 });
