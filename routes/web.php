@@ -6,6 +6,7 @@ use App\Http\Controllers\AgentController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\BillingItemController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\TicketController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -45,6 +46,16 @@ Route::prefix('customer-service')->group(function () {
         Route::get('/articles', [ArticleController::class, 'index']);
         Route::post('/articles', [ArticleController::class, 'store']);
         Route::patch('/articles/{article}/rate', [ArticleController::class, 'rate']);
+
+    });
+
+    // Ticket Management
+    Route::prefix('ticket-management')->group(function () {
+
+        Route::get('/', [TicketController::class, 'index'])->name('ticketmanagement');
+        Route::post('/', [TicketController::class, 'store'])->name('tickets.store');
+        Route::put('/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+        Route::delete('/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 
     });
 
