@@ -47,7 +47,7 @@ class DashboardController extends Controller
         // Ticket summary counts (matched sa Ticket Management submodule metrics)
         $totalTickets = Ticket::count();
         $openTickets = Ticket::where('status', 'OPEN')->count();
-        $closedTickets = Ticket::whereIn('status', ['RESOLVED', 'CLOSED'])->count();
+        $closedTickets = Ticket::where('status', 'CLOSED')->count();
         $avgResponseTime = (int) round(Ticket::whereNotNull('response_minutes')->avg('response_minutes') ?? 0);
 
         $pendingTickets = Ticket::where('status', 'PENDING')->count();

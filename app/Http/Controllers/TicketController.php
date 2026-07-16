@@ -15,26 +15,48 @@ class TicketController extends Controller
         $tickets = Ticket::with('agentModel')->orderBy('created_at', 'desc')->get();
 
         // 2. Dynamic na kalkulasyon ng metrics base sa data sa database
+        //    (naghahambing ng linggong ito kumpara sa nakaraang linggo)
+        $thisWeekStart = now()->startOfWeek();
+        $thisWeekEnd = now()->endOfWeek();
+        $lastWeekStart = now()->subWeek()->startOfWeek();
+        $lastWeekEnd = now()->subWeek()->endOfWeek();
+
+        // Total Tickets: bilang ng tickets na ginawa this week vs last week
+        $totalThisWeek = Ticket::whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->count();
+        $totalLastWeek = Ticket::whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->count();
+
+        // Open Tickets: bilang ng OPEN tickets na ginawa this week vs last week
+        $openThisWeek = Ticket::where('status', 'OPEN')->whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->count();
+        $openLastWeek = Ticket::where('status', 'OPEN')->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->count();
+
+        // Closed Tickets: bilang ng CLOSED tickets na na-update this week vs last week
+        $closedThisWeek = Ticket::where('status', 'CLOSED')->whereBetween('updated_at', [$thisWeekStart, $thisWeekEnd])->count();
+        $closedLastWeek = Ticket::where('status', 'CLOSED')->whereBetween('updated_at', [$lastWeekStart, $lastWeekEnd])->count();
+
+        // Avg Response Time: this week vs last week (base sa tickets na ginawa nung panahong 'yon)
+        $avgThisWeek = Ticket::whereNotNull('response_minutes')->whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->avg('response_minutes') ?? 0;
+        $avgLastWeek = Ticket::whereNotNull('response_minutes')->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->avg('response_minutes') ?? 0;
+
         $metrics = [
             [
                 'label' => 'Total Tickets',
                 'value' => number_format(Ticket::count()),
-                'change' => '+ 12.5%',
+                'change' => $this->formatChange($totalThisWeek, $totalLastWeek),
             ],
             [
                 'label' => 'Open Tickets',
                 'value' => number_format(Ticket::where('status', 'OPEN')->count()),
-                'change' => '▲ 8.2%',
+                'change' => $this->formatChange($openThisWeek, $openLastWeek),
             ],
             [
                 'label' => 'Closed Tickets',
                 'value' => number_format(Ticket::where('status', 'CLOSED')->count()),
-                'change' => '▲ 15.2%',
+                'change' => $this->formatChange($closedThisWeek, $closedLastWeek),
             ],
             [
                 'label' => 'Avg Response Time',
-                'value' => '18m',
-                'change' => '▲ 22%',
+                'value' => ((int) round(Ticket::whereNotNull('response_minutes')->avg('response_minutes') ?? 0)) . 'm',
+                'change' => $this->formatChange($avgThisWeek, $avgLastWeek),
             ],
         ];
 
@@ -95,5 +117,20 @@ class TicketController extends Controller
         $ticket->delete();
 
         return redirect()->route('ticketmanagement')->with('success', 'Matagumpay na na-delete ang ticket!');
+    }
+
+    // Helper: kinukwenta ang % pagbabago sa pagitan ng dalawang bilang
+    // (linggong ito kumpara sa nakaraang linggo), tapos ini-format
+    // bilang string na tulad ng "▲ 12.5%" o "▼ 8.2%"
+    private function formatChange($current, $previous)
+    {
+        if ($previous == 0) {
+            return $current > 0 ? '▲ 100%' : '— 0%';
+        }
+
+        $percent = (($current - $previous) / $previous) * 100;
+        $arrow = $percent > 0 ? '▲' : ($percent < 0 ? '▼' : '—');
+
+        return $arrow . ' ' . number_format(abs($percent), 1) . '%';
     }
 }
