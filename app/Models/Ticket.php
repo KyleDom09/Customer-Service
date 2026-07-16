@@ -30,6 +30,11 @@ class Ticket extends Model
         return $this->belongsTo(Agent::class, 'agent_id');
     }
 
+    public function communications()
+    {
+        return $this->hasMany(Communication::class);
+    }
+
     // Ginagamit sa blade bilang $ticket->name
     public function getNameAttribute()
     {
