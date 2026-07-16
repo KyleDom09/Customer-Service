@@ -1032,7 +1032,7 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
     try {
-      const res = await fetch('/communication-history/store', {
+      const res = await fetch('/customer-service/communication-history/store', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

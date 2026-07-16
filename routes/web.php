@@ -17,7 +17,7 @@ Route::get('/', function () {
 Route::prefix('customer-service')->group(function () {
 
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
     // Agents
     Route::get('/agents', [AgentController::class, 'index']);
