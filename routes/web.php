@@ -7,6 +7,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\BillingItemController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\SlaController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -57,6 +58,17 @@ Route::prefix('customer-service')->group(function () {
         Route::put('/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
         Route::delete('/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 
+    });
+
+    // SLA Tracking
+    Route::prefix('sla-tracking')->group(function () {
+ 
+    Route::get('/', [SlaController::class, 'index']);
+    Route::post('/rules', [SlaController::class, 'storeRule']);
+    Route::put('/rules/{id}', [SlaController::class, 'updateRule']);
+    Route::delete('/rules/{id}', [SlaController::class, 'destroyRule']);
+    Route::post('/calendar', [SlaController::class, 'updateCalendar']);
+ 
     });
 
 });
