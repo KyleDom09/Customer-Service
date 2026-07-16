@@ -283,7 +283,7 @@ document.getElementById('newForm').addEventListener('submit', async (e) => {
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
   try {
-    const res = await fetch('/communication-history/store', {
+    const res = await fetch('/customer-service/communication-history/store', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -749,16 +749,3 @@ chatForm.addEventListener('submit', (e) => {
   handleFreeText(text);
 });
 
-// Locate this section inside your app.js and alter it to allow server dispatching
-const newFormElement = document.getElementById('newForm');
-if (newFormElement) {
-  newFormElement.addEventListener('submit', (e) => {
-    // REMOVE OR COMMENT OUT e.preventDefault() to allow data synchronization back to Laragon MySQL
-    // e.preventDefault(); 
-    
-    // Close the interface modal visually before submission reload triggers
-    if (typeof closeNewModal === 'function') {
-        closeNewModal();
-    }
-  });
-}

@@ -8,6 +8,7 @@ use App\Http\Controllers\BillingItemController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\SlaController;
+use App\Http\Controllers\CommunicationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -70,5 +71,16 @@ Route::prefix('customer-service')->group(function () {
         Route::post('/calendar', [SlaController::class, 'updateCalendar']);
 
     });
+
+    // Communication History
+    Route::get('/communication-history', [CommunicationController::class, 'index'])
+        ->name('communication.index');
+
+    Route::post('/communication-history/store', [CommunicationController::class, 'store'])
+        ->name('communication.store');
+
+    Route::get('/dashboard-history', function () {
+        return view('Dashboard-Communication');
+    })->name('dashboard.history');
 
 });
