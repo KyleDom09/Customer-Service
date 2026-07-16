@@ -87,7 +87,7 @@ class ActivityLogController extends Controller
             'logged_at' => now(),
         ]);
 
-        return redirect('/logs');
+        return redirect('/customer-service/logs');
     }
 
     public function update(Request $request, ActivityLog $activityLog)
@@ -111,14 +111,14 @@ class ActivityLogController extends Controller
             'severity' => $validated['severity'],
         ]);
 
-        return redirect('/logs');
+        return redirect('/customer-service/logs');
     }
 
     public function destroy(ActivityLog $activityLog)
     {
         $activityLog->delete();
 
-        return redirect('/logs');
+        return redirect('/customer-service/logs');
     }
 
     public function markAllRead()

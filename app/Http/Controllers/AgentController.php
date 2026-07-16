@@ -58,7 +58,7 @@ class AgentController extends Controller
 
         Agent::create($validated);
 
-        return redirect('/agents')->with('form', 'add-agent');
+        return redirect('/customer-service/agents')->with('form', 'add-agent');
     }
 
     public function update(Request $request, Agent $agent)
@@ -75,13 +75,13 @@ class AgentController extends Controller
 
         $agent->update($validated);
 
-        return redirect('/agents');
+        return redirect('/customer-service/agents');
     }
 
     public function destroy(Agent $agent)
     {
         $agent->delete();
 
-        return redirect('/agents');
+        return redirect('/customer-service/agents');
     }
 }

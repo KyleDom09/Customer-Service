@@ -6,8 +6,23 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Customer Service Dashboard')</title>
 
-    {{-- Tailwind --}}
-    @vite('resources/css/app.css')
+    {{-- Tailwind (CDN, hindi na kailangan ng Vite build) --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#1E3A8A',
+                        'navy-dark': '#152a63',
+                    },
+                    fontFamily: {
+                        sans: ['Instrument Sans', 'ui-sans-serif', 'system-ui', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+                    },
+                },
+            },
+        };
+    </script>
 
     {{-- Chart.js --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
