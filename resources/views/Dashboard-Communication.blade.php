@@ -23,67 +23,7 @@
 <div class="flex min-h-screen">
 
   <!-- Sidebar -->
-  <aside id="sidebar" class="sidebar-transition fixed lg:static z-40 -translate-x-full lg:translate-x-0 w-[240px] min-h-screen bg-[#1E3A8A] flex flex-col justify-between">
-    <div>
-      <div class="px-6 py-7">
-        <h1 class="text-white text-xl font-bold">Customer Service</h1>
-      </div>
-      <nav class="mt-2 px-3 space-y-1">
-        <a href="{{ route('dashboard.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-blue-100 hover:bg-white/10 transition-colors">
-          <i data-lucide="pie-chart" class="w-5 h-5"></i>
-          <span class="font-medium text-sm">Dashboard</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-blue-100 hover:bg-white/10 transition-colors">
-          <i data-lucide="ticket" class="w-5 h-5"></i>
-          <span class="font-medium text-sm">Ticket Management</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-blue-100 hover:bg-white/10 transition-colors">
-          <i data-lucide="laptop" class="w-5 h-5"></i>
-          <span class="font-medium text-sm">Self-Service Portal</span>
-        </a>
-
-        <!-- Communication History (link + separate chevron toggle) -->
-        <div>
-          <div class="flex items-center rounded-xl text-blue-100 hover:bg-white/10 transition-colors overflow-hidden">
-            <a href="{{ route('communication.index') }}" class="flex-1 flex items-center gap-3 px-4 py-3">
-              <i data-lucide="message-square" class="w-5 h-5"></i>
-              <span class="font-medium text-sm">Communication History</span>
-            </a>
-            <button id="commHistoryToggle" type="button" class="flex items-center gap-2 pr-4 py-3 pl-2">
-              <i data-lucide="chevron-down" id="commHistoryChevron" class="w-4 h-4 transition-transform rotate-180"></i>
-            </button>
-          </div>
-
-          <div id="commHistorySubmenu" class="mt-1 pl-4 space-y-1">
-            <a href="{{ route('dashboard.history') }}" class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-white/15 text-white text-sm">
-              <span class="flex items-center gap-3">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                <span class="font-semibold">Dashboard History</span>
-              </span>
-              <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
-            </a>
-          </div>
-        </div>
-
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-blue-100 hover:bg-white/10 transition-colors">
-          <i data-lucide="history" class="w-5 h-5"></i>
-          <span class="font-medium text-sm">SLA Tracking</span>
-        </a>
-      </nav>
-    </div>
-
-    <div class="p-4">
-      <div class="bg-white/10 rounded-xl p-3 flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">
-          <i data-lucide="headset" class="w-5 h-5 text-white"></i>
-        </div>
-        <div>
-          <p class="text-xs text-blue-100">Support Status</p>
-          <p class="text-sm font-semibold text-[#10B981]">Online</p>
-        </div>
-      </div>
-    </div>
-  </aside>
+  @include('partials.sidebar')
 
   <!-- Main -->
   <div class="flex-1 min-w-0">
@@ -300,16 +240,6 @@
   function closeSidebar() { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
   menuBtn.addEventListener('click', openSidebar);
   overlay.addEventListener('click', closeSidebar);
-
-  // ---- Dashboard History submenu toggle ----
-  const commHistoryToggle = document.getElementById('commHistoryToggle');
-  const commHistorySubmenu = document.getElementById('commHistorySubmenu');
-  const commHistoryChevron = document.getElementById('commHistoryChevron');
-
-  commHistoryToggle.addEventListener('click', () => {
-    commHistorySubmenu.classList.toggle('hidden');
-    commHistoryChevron.classList.toggle('rotate-180');
-  });
 
   // ---- Sample data (replace with real values from your database later) ----
   const emailsHistoryTotal = 248391;

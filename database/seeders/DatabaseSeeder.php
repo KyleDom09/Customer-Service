@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             TicketSeeder::class,
             ArticleSeeder::class,
             BillingItemSeeder::class,
+            CommunicationSeeder::class,
         ]);
     }
 }

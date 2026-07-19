@@ -11,29 +11,7 @@
 <body class="bg-[#F4F7FE] text-slate-800 antialiased flex h-screen overflow-hidden relative">
 
     <!-- 1. SIDEBAR -->
-    <aside class="w-64 bg-[#1A2B6D] text-slate-300 flex flex-col justify-between shrink-0 shadow-xl">
-        <div>
-            <div class="p-6 text-base font-bold text-white tracking-wide border-b border-[#25377C] flex items-center gap-2">
-                Customer Service
-            </div>
-            <nav class="p-4 space-y-1 text-sm">
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-[#25377C] transition">Dashboard</a>
-                <a href="#" class="flex items-center justify-between px-4 py-2.5 rounded-lg bg-[#25377C] text-white font-medium border border-emerald-500/30">
-                    <span>Ticket Management</span>
-                    <span class="w-1.5 h-1.5 bg-[#00CB92] rounded-full"></span>
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-[#25377C] transition">Self-Service Portal</a>
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-[#25377C] transition">Communication History</a>
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-[#25377C] transition">SLA Tracking</a>
-            </nav>
-        </div>
-        <div class="p-4 m-4 rounded-xl bg-[#132052] border border-[#25377C]">
-            <p class="text-[11px] text-slate-400">Support Status</p>
-            <div class="flex items-center gap-2 mt-1 text-xs font-semibold text-[#00CB92]">
-                <span class="w-2 h-2 bg-[#00CB92] rounded-full animate-pulse"></span> Online
-            </div>
-        </div>
-    </aside>
+    @include('partials.sidebar')
 
     <!-- MAIN INTERFACE CONTAINER -->
     <div class="flex-1 flex flex-col overflow-hidden">

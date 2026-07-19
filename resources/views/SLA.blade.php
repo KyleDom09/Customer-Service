@@ -264,49 +264,7 @@
 
     <div class="w-screen h-screen flex flex-row relative select-none overflow-hidden">
         
-        <aside class="w-64 bg-[#1e3a8a] text-white flex flex-col justify-between shrink-0 relative z-10 shadow-2xl">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-10 px-1 cursor-pointer hover:opacity-80 transition-opacity">
-                    <span class="font-bold text-lg tracking-wide text-white">Customer Service</span>
-                    <span class="text-sm font-bold text-white">❯</span>
-                </div>
-                <nav class="space-y-3 text-[13px] font-medium">
-                    <a href="#" class="flex items-center gap-4 py-2.5 px-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer">
-                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
-                        Dashboard
-                    </a>
-                    <a href="#" class="flex items-center gap-4 py-2.5 px-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer">
-                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
-                        Ticket Management
-                    </a>
-                    <a href="#" class="flex items-center gap-4 py-2.5 px-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer">
-                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        Self-Service Portal
-                    </a>
-                    <a href="#" class="flex items-center gap-4 py-2.5 px-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer">
-                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-                        Communication History
-                    </a>
-                    <div class="flex items-center justify-between py-3 px-3 bg-[#185c6a] text-teal-100 font-semibold rounded-xl mt-4 shadow-[0_5px_15px_rgba(16,185,129,0.2)] border border-[#217082] cursor-pointer hover:bg-[#154d58] active:scale-95 transition-all">
-                        <div class="flex items-center gap-4">
-                            <svg class="w-5 h-5 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            SLA Tracking
-                        </div>
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] mr-1 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                    </div>
-                </nav>
-            </div>
-            
-            <div class="p-3 mx-4 mb-6 bg-[#263e8a] hover:bg-[#2b4499] transition-colors cursor-pointer active:scale-95 rounded-xl flex items-center gap-3 shadow-lg border border-[#304a9e]/50">
-                <div class="w-8 h-8 rounded-full bg-[#3a53a5] flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-indigo-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                </div>
-                <div class="text-[11px]">
-                    <p class="text-slate-400 font-medium leading-none">Support Status</p>
-                    <p class="text-[#10b981] font-bold mt-1 drop-shadow-sm">Online</p>
-                </div>
-            </div>
-        </aside>
+        @include('partials.sidebar')
 
         <main class="flex-1 flex flex-col overflow-hidden relative bg-[#f4f6f9] rounded-tl-3xl shadow-inner">
             

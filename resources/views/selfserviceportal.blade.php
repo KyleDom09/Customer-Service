@@ -221,48 +221,7 @@
 
     <div class="flex h-screen overflow-hidden">
         
-        <aside class="w-64 bg-[#1e3a8a] text-white flex flex-col justify-between shadow-lg">
-            <div>
-                <div class="p-6 border-b border-blue-900">
-                    <h1 class="text-xl font-bold tracking-wide">Customer Service</h1>
-                </div>
-                <nav class="mt-6 px-4 space-y-2">
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-blue-900 transition">
-                        <i class="fas fa-th-large w-5"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-blue-900 transition">
-                        <i class="fas fa-ticket-alt w-5"></i>
-                        <span>Ticket Management</span>
-                    </a>
-                    <button @click="currentView = 'main'" :class="currentView === 'main' ? 'bg-[#2563eb] text-white' : 'text-slate-300 hover:bg-blue-900'" class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition text-left cursor-pointer">
-                        <div class="flex items-center space-x-3">
-                            <i class="fas fa-laptop-house w-5"></i>
-                            <span>Self-Service Portal</span>
-                        </div>
-                        <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                    </button>
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-blue-900 transition">
-                        <i class="fas fa-comments w-5"></i>
-                        <span>Communication History</span>
-                    </a>
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-blue-900 transition">
-                        <i class="fas fa-history w-5"></i>
-                        <span>SLA Tracking</span>
-                    </a>
-                </nav>
-            </div>
-            
-            <div class="p-4 bg-blue-950 m-4 rounded-xl flex items-center space-x-3">
-                <div class="bg-blue-900 p-2 rounded-lg text-slate-300">
-                    <i class="fas fa-headset"></i>
-                </div>
-                <div>
-                    <p class="text-xs text-slate-400">Support Status</p>
-                    <p class="text-sm font-semibold text-emerald-400">Online</p>
-                </div>
-            </div>
-        </aside>
+        @include('partials.sidebar')
 
         <div class="flex-1 flex flex-col overflow-y-auto">
             
