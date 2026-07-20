@@ -26,7 +26,7 @@
                 <div class="flex items-center gap-3 border-l border-slate-200 pl-4">
                     <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">TF</div>
                     <div>
-                        <div class="text-xs font-semibold text-slate-800">Sauce</div>
+                        <div class="text-xs font-semibold text-slate-800">Timoty Filoteo</div>
                         <div class="text-[10px] text-slate-400">Ticket Manager</div>
                     </div>
                 </div>
