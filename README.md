@@ -23,15 +23,15 @@ Isang Laravel-based na Customer Service Management System — dashboard para sa 
 |---|---|
 | Backend | Laravel (PHP) |
 | Frontend | Blade Templating + Tailwind CSS |
-| Database | MySQL (Laragon local / Aiven production) |
+| Database | MySQL |
 | Design Reference | Figma |
 
 ## 📁 Project Structure
 
 ```
 app/
- ├── Http/Controllers/   → ActivityLog, Agent, Article, BillingItem, Dashboard, Sla, Ticket
- ├── Models/             → ActivityLog, Agent, Article, BillingItem, CalendarSetting, SlaRule, Ticket, User
+ ├── Http/Controllers/   → ActivityLog, Agent, Article, BillingItem, Communication, Dashboard, Sla, Ticket
+ ├── Models/             → ActivityLog, Agent, Article, BillingItem, CalendarSetting, Communication, SlaRule, Ticket, User
 database/
  ├── migrations/
  ├── seeders/
@@ -41,6 +41,8 @@ resources/
       ├── Ticketmanagement.blade.php
       ├── selfserviceportal.blade.php
       ├── SLA.blade.php
+      ├── Communication-History.blade.php
+      ├── Dashboard-Communication.blade.php
       ├── agents.blade.php
       ├── logs.blade.php
       └── layouts/ & partials/
