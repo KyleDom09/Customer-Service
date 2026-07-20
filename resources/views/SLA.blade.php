@@ -151,16 +151,17 @@
         },
 
         init() {
-            let storedRules = localStorage.getItem('sla_rules_storage');
-            
-            if (storedRules) {
-                this.rulesList = JSON.parse(storedRules);
-            } else if (this.backendRules && this.backendRules.length > 0) {
+            if (this.backendRules && this.backendRules.length > 0) {
                 this.rulesList = this.backendRules;
                 this.saveRulesLocally();
             } else {
-                this.rulesList = [{ id: 1, name: 'Standard T1 Response', response: '< 1h', resolution: '< 24h', active: true }];
-                this.saveRulesLocally();
+                let storedRules = localStorage.getItem('sla_rules_storage');
+                if (storedRules) {
+                    this.rulesList = JSON.parse(storedRules);
+                } else {
+                    this.rulesList = [{ id: 1, name: 'Standard T1 Response', response: '< 1h', resolution: '< 24h', active: true }];
+                    this.saveRulesLocally();
+                }
             }
             
             let storedCalendar = localStorage.getItem('sla_calendar_storage');
@@ -387,7 +388,7 @@
             this.ruleEditorOpen = false;
 
             try {
-                fetch('/rules', {
+                fetch('/customer-service/sla-tracking/rules', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -403,7 +404,7 @@
             this.saveRulesLocally(); // I-save natin yung pagbura
 
             try {
-                fetch('/rules/' + id, {
+                fetch('/customer-service/sla-tracking/rules/' + id, {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
                 });
@@ -415,7 +416,7 @@
             this.saveRulesLocally(); // I-save natin yung state ng toggle
 
             try {
-                fetch('/rules/' + rule.id, {
+                fetch('/customer-service/sla-tracking/rules/' + rule.id, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -428,7 +429,7 @@
 
         saveCalendar() {
             try {
-                fetch('/calendar', {
+                fetch('/customer-service/sla-tracking/calendar', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

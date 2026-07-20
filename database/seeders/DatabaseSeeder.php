@@ -29,7 +29,6 @@ class DatabaseSeeder extends Seeder
             ArticleSeeder::class,
             BillingItemSeeder::class,
             CommunicationSeeder::class,
-            SlaRuleSeeder::class,
         ]);
     }
 }
