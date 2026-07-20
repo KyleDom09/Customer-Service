@@ -23,8 +23,8 @@
                 <span class="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
             </div>
             <div class="flex items-center gap-4">
-                <button class="text-slate-400 text-xs">🔔</button>
-                <button class="text-slate-400 text-xs">⚙️</button>
+                <button class="text-slate-400 text-xs"></button>
+                <button class="text-slate-400 text-xs"></button>
                 <div class="flex items-center gap-3 border-l border-slate-200 pl-4">
                     <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">TF</div>
                     <div>
