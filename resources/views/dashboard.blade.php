@@ -152,7 +152,7 @@
                     </span>
                 </div>
             </div>
-            <div class="h-80">
+            <div class="h-80" style="height: 320px; min-height: 320px;">
                 <canvas id="ticketVolumeChart"></canvas>
             </div>
         </div>
@@ -238,65 +238,68 @@
     // Dynamic datasets per period, galing sa database (Ticket model)
     const dashboardData = @json($dashboardPeriods);
 
-    // Ticket Volume Trend (Line Chart)
-    const ticketVolumeChart = new Chart(document.getElementById('ticketVolumeChart'), {
-        type: 'line',
-        data: {
-            labels: dashboardData['Today'].labels,
-            datasets: [
-                {
-                    label: 'Tickets Received',
-                    data: dashboardData['Today'].received,
-                    borderColor: '#1E3A8A',
-                    backgroundColor: 'rgba(30, 58, 138, 0.08)',
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#1E3A8A',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                },
-                {
-                    label: 'Tickets Resolved',
-                    data: dashboardData['Today'].resolvedLine,
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34, 197, 94, 0.08)',
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#22c55e',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
+    let ticketVolumeChart;
 
-    // CSAT Doughnut Chart
-    new Chart(document.getElementById('csatDoughnutChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Excellent', 'Good', 'Fair'],
-            datasets: [{
-                data: [{{ $excellentPercent }}, {{ $goodPercent }}, {{ $fairPercent }}],
-                backgroundColor: ['#22c55e', '#1E3A8A', '#fb923c'],
-                borderWidth: 0,
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '75%',
-            plugins: { legend: { display: false } }
-        }
+    window.addEventListener('load', function() {
+        ticketVolumeChart = new Chart(document.getElementById('ticketVolumeChart'), {
+            type: 'line',
+            data: {
+                labels: dashboardData['Today'].labels,
+                datasets: [
+                    {
+                        label: 'Tickets Received',
+                        data: dashboardData['Today'].received,
+                        borderColor: '#1E3A8A',
+                        backgroundColor: 'rgba(30, 58, 138, 0.08)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#1E3A8A',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                    },
+                    {
+                        label: 'Tickets Resolved',
+                        data: dashboardData['Today'].resolvedLine,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#22c55e',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // CSAT Doughnut Chart
+        new Chart(document.getElementById('csatDoughnutChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Excellent', 'Good', 'Fair'],
+                datasets: [{
+                    data: [{{ $excellentPercent }}, {{ $goodPercent }}, {{ $fairPercent }}],
+                    backgroundColor: ['#22c55e', '#1E3A8A', '#fb923c'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '75%',
+                plugins: { legend: { display: false } }
+            }
+        });
     });
 
     // Function na tinatawag ng navbar dropdown para i-update lahat
