@@ -119,17 +119,85 @@
         ],
         hoveredDayIndex: null,
         
-        rulesList: {{ json_encode($rules ?? []) }},
+        backendRules: {{ json_encode($rules ?? []) }},
+        rulesList: [],
         
         newRuleName: '',
         newRuleResponse: '',
         newRuleResolution: '',
         
+        saveRulesLocally() {
+            localStorage.setItem('sla_rules_storage', JSON.stringify(this.rulesList));
+        },
+
+        // Parehong pattern ng saveRulesLocally() - dito na-save lahat ng calendar
+        // selection + graph data, kaya kapag nireset/nirefresh yung site, mananatili
+        // lang ang huling na-confirm na date/data, hindi babalik sa default.
+        saveCalendarLocally() {
+            localStorage.setItem('sla_calendar_storage', JSON.stringify({
+                selectedDate: this.selectedDate,
+                selectedMonth: this.selectedMonth,
+                selectedYear: this.selectedYear,
+                selectedHour: this.selectedHour,
+                selectedMinute: this.selectedMinute,
+                selectedAmpm: this.selectedAmpm,
+                graphPoints: this.graphPoints,
+                barHeights: this.barHeights,
+                slaCompliancePct: this.slaCompliancePct,
+                breachedTickets: this.breachedTickets,
+                atRiskTickets: this.atRiskTickets,
+                timelineDays: this.timelineDays
+            }));
+        },
+
         init() {
-            if(this.rulesList.length === 0) {
+            let storedRules = localStorage.getItem('sla_rules_storage');
+            
+            if (storedRules) {
+                this.rulesList = JSON.parse(storedRules);
+            } else if (this.backendRules && this.backendRules.length > 0) {
+                this.rulesList = this.backendRules;
+                this.saveRulesLocally();
+            } else {
                 this.rulesList = [{ id: 1, name: 'Standard T1 Response', response: '< 1h', resolution: '< 24h', active: true }];
+                this.saveRulesLocally();
             }
-            this.generateCalendar();
+            
+            let storedCalendar = localStorage.getItem('sla_calendar_storage');
+
+            if (storedCalendar) {
+                // May naka-save na dati - ibalik lang lahat ng dati, huwag mag-generate
+                // ng bago. Kaya kung ni-reset yung site pero same date pa rin, hindi
+                // babalik sa default, mananatili yung huling na-confirm na data.
+                const saved = JSON.parse(storedCalendar);
+                this.selectedDate = saved.selectedDate;
+                this.selectedMonth = saved.selectedMonth;
+                this.selectedYear = saved.selectedYear;
+                this.selectedHour = saved.selectedHour;
+                this.selectedMinute = saved.selectedMinute;
+                this.selectedAmpm = saved.selectedAmpm;
+                this.graphPoints = saved.graphPoints;
+                this.barHeights = saved.barHeights;
+                this.slaCompliancePct = saved.slaCompliancePct;
+                this.breachedTickets = saved.breachedTickets;
+                this.atRiskTickets = saved.atRiskTickets;
+                this.timelineDays = saved.timelineDays;
+
+                this.generateCalendar();
+            } else {
+                this.generateCalendar();
+
+                // Unang beses palang - deterministic data base sa backend/default date.
+                const initialData = this.generateDataForDate(this.selectedYear, this.selectedMonth, this.selectedDate);
+                this.graphPoints = initialData.graphPoints;
+                this.barHeights = initialData.barHeights;
+                this.slaCompliancePct = initialData.slaCompliancePct;
+                this.breachedTickets = initialData.breachedTickets;
+                this.atRiskTickets = initialData.atRiskTickets;
+                this.timelineDays = initialData.timelineDays;
+
+                this.saveCalendarLocally(); // I-save agad para consistent na sa susunod
+            }
         },
 
         generateCalendar() {
@@ -149,9 +217,11 @@
                 this.selectedYear++;
             }
             this.generateCalendar();
-            this.randomizeGraph();
+            // Tinanggal yung this.randomizeGraph() dito para di mag-iba graphs
         },
 
+        // Iniwan ko parin ang randomizeGraph function incase gusto mong gamitin in the future, 
+        // pero hindi na siya tatawagin kapag nag bago ka ng date.
         randomizeGraph() {
             this.graphPoints = this.graphPoints.map(() => Math.floor(Math.random() * 50) + 20);
             ['high', 'medium', 'low'].forEach(tier => {
@@ -180,6 +250,106 @@
             });
         },
 
+        // ===== DETERMINISTIC (SEEDED) DATA GENERATION =====
+        // Same date = same seed = same numbers palagi, kahit i-reset/i-refresh yung website.
+        // Iba lang ang numbers kung magpalit ka ng date, dahil iba na ang seed.
+
+        dateSeed(y, m, d) {
+            return (parseInt(y) * 372) + (parseInt(m) * 31) + parseInt(d);
+        },
+
+        makeRng(seed) {
+            let s = seed % 233280;
+            if (s <= 0) s += 233280;
+            return () => {
+                s = (s * 9301 + 49297) % 233280;
+                return s / 233280;
+            };
+        },
+
+        generateDataForDate(y, m, d) {
+            const rng = this.makeRng(this.dateSeed(y, m, d));
+            const rand = (min, max) => Math.floor(rng() * (max - min + 1)) + min;
+
+            const graphPoints = Array.from({ length: 8 }, () => rand(20, 70));
+
+            const barHeights = {
+                high:   [rand(30, 70), rand(60, 100), rand(10, 40)],
+                medium: [rand(30, 70), rand(60, 100), rand(10, 40)],
+                low:    [rand(30, 70), rand(60, 100), rand(10, 40)]
+            };
+
+            const slaCompliancePct = rand(80, 100);
+
+            const breachedTickets = Array.from({ length: rand(0, 3) }, () => ({
+                id: '#' + rand(1000, 9999),
+                time: rand(10, 70) + ' mins'
+            }));
+
+            const atRiskTickets = Array.from({ length: rand(1, 4) }, () => ({
+                id: '#' + rand(1000, 9999),
+                time: rand(5, 30) + ' mins left',
+                ticketId: 'TK-' + rand(1000, 9999)
+            }));
+
+            const timelineDays = this.timelineDays.map(day => ({
+                label: day.label,
+                b: Array.from({ length: rand(0, 2) }, () => '#' + rand(1000, 9999)),
+                r: Array.from({ length: rand(0, 3) }, () => '#' + rand(1000, 9999))
+            }));
+
+            return { graphPoints, barHeights, slaCompliancePct, breachedTickets, atRiskTickets, timelineDays };
+        },
+
+        // Smoothly animates (tweens) yung mga graphs papunta sa bagong deterministic values
+        // ng napiling date. Hindi random ang destination values, kaya consistent palagi
+        // pag-uwi mo dun sa same date, pero may animation transition papunta dun.
+        animateGraphChange(newData) {
+            const duration = 900;
+            const startTime = performance.now();
+
+            const startPoints = [...this.graphPoints];
+            const endPoints = newData.graphPoints;
+
+            const startBars = JSON.parse(JSON.stringify(this.barHeights));
+            const endBars = newData.barHeights;
+
+            const startPct = this.slaCompliancePct;
+            const endPct = newData.slaCompliancePct;
+
+            const ease = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+            const step = (now) => {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = ease(progress);
+
+                this.graphPoints = startPoints.map((v, i) => v + (endPoints[i] - v) * eased);
+
+                ['high', 'medium', 'low'].forEach(tier => {
+                    this.barHeights[tier] = startBars[tier].map((v, i) => v + (endBars[tier][i] - v) * eased);
+                });
+
+                this.slaCompliancePct = Math.round(startPct + (endPct - startPct) * eased);
+
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    // Snap sa exact final deterministic values pag tapos na yung animation,
+                    // para walang rounding drift.
+                    this.graphPoints = endPoints;
+                    this.barHeights = endBars;
+                    this.slaCompliancePct = endPct;
+                    this.breachedTickets = newData.breachedTickets;
+                    this.atRiskTickets = newData.atRiskTickets;
+                    this.timelineDays = newData.timelineDays;
+
+                    this.saveCalendarLocally(); // I-save yung bagong data ng bagong date
+                }
+            };
+
+            requestAnimationFrame(step);
+        },
+
         graphPathLine() { 
             return 'M 0 ' + this.graphPoints[0] + ' Q 15 ' + this.graphPoints[1] + ' 25 ' + this.graphPoints[2] + ' T 45 ' + this.graphPoints[3] + ' T 65 ' + this.graphPoints[4] + ' T 80 ' + this.graphPoints[5] + ' T 90 ' + this.graphPoints[6] + ' T 100 ' + this.graphPoints[7]; 
         },
@@ -198,6 +368,8 @@
             };
 
             this.rulesList.push(ruleData);
+            this.saveRulesLocally(); // I-save natin agad
+            
             this.unreadNotifications++;
             this.notifyPulse = true;
             this.notificationsList.unshift({
@@ -228,6 +400,8 @@
 
         deleteRule(id) {
             this.rulesList = this.rulesList.filter(rule => rule.id !== id);
+            this.saveRulesLocally(); // I-save natin yung pagbura
+
             try {
                 fetch('/rules/' + id, {
                     method: 'DELETE',
@@ -238,6 +412,8 @@
 
         toggleRule(rule) {
             rule.active = !rule.active;
+            this.saveRulesLocally(); // I-save natin yung state ng toggle
+
             try {
                 fetch('/rules/' + rule.id, {
                     method: 'PUT',
@@ -248,6 +424,33 @@
                     body: JSON.stringify({ active: rule.active })
                 });
             } catch(e) {}
+        },
+
+        saveCalendar() {
+            try {
+                fetch('/calendar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify({
+                        date: this.selectedDate,
+                        month: this.selectedMonth,
+                        year: this.selectedYear,
+                        hour: this.selectedHour,
+                        minute: this.selectedMinute,
+                        ampm: this.selectedAmpm
+                    })
+                });
+            } catch(e) {}
+
+            // Bagong date = bagong seed = bagong deterministic values, pero mag-a-animate
+            // papunta dun. Same date ulit sa hinaharap (kahit mag-reset ka) = same values.
+            const newData = this.generateDataForDate(this.selectedYear, this.selectedMonth, this.selectedDate);
+            this.animateGraphChange(newData);
+
+            this.datePickerOpen = false;
         },
 
         openTicketFromLog(log) {
@@ -313,10 +516,12 @@
                     <div class="relative">
                         <div class="flex items-center gap-2.5 border-l pl-4 border-slate-200 cursor-pointer hover:bg-slate-50 transition-all p-1.5 rounded-xl shadow-sm" @click="profileOpen = !profileOpen" @click.away="profileOpen = false">
                             <div class="w-8 h-8 rounded-full bg-slate-300 overflow-hidden ring-2 ring-blue-100 shadow-md transition-transform duration-200" :class="profileOpen ? 'scale-105' : ''">
-                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="w-full h-full object-cover">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'Rodrin') }}&background=random" class="w-full h-full object-cover">
                             </div>
                             <div class="flex flex-col items-start leading-none">
-                                <span class="text-[11px] font-bold text-slate-800 tracking-wide drop-shadow-sm">Rodrin</span>
+                                <span class="text-[11px] font-bold text-slate-800 tracking-wide drop-shadow-sm">
+                                    {{ auth()->check() ? auth()->user()->name : 'Rodrin' }}
+                                </span>
                                 <span class="text-[9px] text-slate-400 font-medium">Administrator</span>
                             </div>
                             <svg class="w-3 h-3 text-slate-400 transition-transform duration-200 drop-shadow-sm" :class="profileOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -672,7 +877,7 @@
                  </div>
             </div>
 
-            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-40"
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-50"
                  x-show="rulesConfigOpen" x-cloak x-transition>
                 <div class="bg-white rounded-2xl w-[480px] shadow-2xl border border-slate-200 p-5 flex flex-col justify-between"
                      @click.away="if (!ruleEditorOpen) rulesConfigOpen = false">
@@ -756,7 +961,7 @@
                         </div>
                         
                         <div class="space-y-2">
-                            <button @click="datePickerOpen = false" class="w-full py-3 bg-white text-emerald-800 font-black rounded-xl shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:bg-emerald-50 transition-all uppercase text-xs tracking-wider active:scale-95 cursor-pointer drop-shadow-sm">Confirm Point</button>
+                            <button @click="saveCalendar()" class="w-full py-3 bg-white text-emerald-800 font-black rounded-xl shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:bg-emerald-50 transition-all uppercase text-xs tracking-wider active:scale-95 cursor-pointer drop-shadow-sm">Confirm Point</button>
                         </div>
                     </div>
 
@@ -777,7 +982,7 @@
                                 </div>
                                 <div class="grid grid-cols-7 text-center gap-y-1.5 font-bold text-slate-700">
                                     <template x-for="day in daysInMonth" :key="day">
-                                        <div @click="selectedDate = day; randomizeGraph()" 
+                                        <div @click="selectedDate = day;" 
                                              class="w-8 h-8 flex items-center justify-center mx-auto rounded-lg text-xs font-black transition-all cursor-pointer transform active:scale-95 hover:-translate-y-0.5 hover:shadow-md"
                                              :class="selectedDate === day ? 'bg-[#10b981] text-white shadow-[0_4px_10px_rgba(16,185,129,0.5)] drop-shadow-sm' : 'hover:bg-white border border-transparent hover:border-slate-200 shadow-sm'">
                                             <span x-text="day"></span>
