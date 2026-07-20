@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Service - Ticket Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+    <script src="{{ asset('vendor/tailwind.js') }}"></script>
+    <style> body { font-family: 'Segoe UI', 'Inter', sans-serif; } </style>
 </head>
 <body class="bg-[#F4F7FE] text-slate-800 antialiased flex h-screen overflow-hidden relative">
 

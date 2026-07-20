@@ -7,7 +7,7 @@
     <title>@yield('title', 'Customer Service Dashboard')</title>
 
     {{-- Tailwind (CDN, hindi na kailangan ng Vite build) --}}
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('vendor/tailwind.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {

@@ -4,13 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard History</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ asset('vendor/tailwind.js') }}"></script>
+<script src="{{ asset('vendor/lucide.min.js') }}"></script>
+<script src="{{ asset('vendor/chart.min.js') }}"></script>
 <style>
-  body { font-family: 'Poppins', sans-serif; }
+  body { font-family: 'Segoe UI', 'Poppins', sans-serif; }
   ::-webkit-scrollbar { height: 6px; width: 6px; }
   ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
   .sidebar-transition { transition: transform 0.3s ease-in-out; }

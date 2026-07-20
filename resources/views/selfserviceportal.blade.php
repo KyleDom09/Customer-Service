@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Customer Service - Self-Service Portal</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="{{ asset('vendor/tailwind.js') }}"></script>
+    <script defer src="{{ asset('vendor/alpine.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/css/all.min.css') }}">
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans antialiased" 
       x-init="init()"

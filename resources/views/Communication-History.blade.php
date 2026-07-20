@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Customer Service Dashboard</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="{{ asset('vendor/tailwind.js') }}"></script>
+<script src="{{ asset('vendor/lucide.min.js') }}"></script>
+<script src="{{ asset('vendor/xlsx.min.js') }}"></script>
+<script src="{{ asset('vendor/jspdf.min.js') }}"></script>
+<script src="{{ asset('vendor/jspdf-autotable.min.js') }}"></script>
 <style>
-  body { font-family: 'Poppins', sans-serif; }
+  body { font-family: 'Segoe UI', 'Poppins', sans-serif; }
   ::-webkit-scrollbar { height: 6px; width: 6px; }
   ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
   .sidebar-transition { transition: transform 0.3s ease-in-out; }
