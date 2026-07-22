@@ -569,7 +569,7 @@
   </div>
 </div>
 
-<!-- Chatbot Widget -->
+{{-- Chatbot Widget - DISABLED FOR NOW - re-enable when ready
 
 <div id="chatbotWidget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
 
@@ -614,6 +614,8 @@
     <img src="/assets/chatbot-avatar.png" alt="Chatbot" class="w-full h-full object-cover" onerror="botAvatarFallback(this)">
   </button>
 </div>
+
+--}}
 
 <script>
   lucide.createIcons();

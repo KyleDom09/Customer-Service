@@ -509,6 +509,7 @@ document.getElementById('previewDownloadBtn').addEventListener('click', () => {
 });
 
 // ================= Chatbot Widget =================
+/* CHATBOT DISABLED FOR NOW - re-enable when ready
 const chatPanel = document.getElementById('chatPanel');
 const chatToggleBtn = document.getElementById('chatToggleBtn');
 const chatCloseBtn = document.getElementById('chatCloseBtn');
@@ -748,4 +749,4 @@ chatForm.addEventListener('submit', (e) => {
   clearOptions();
   handleFreeText(text);
 });
-
+*/
