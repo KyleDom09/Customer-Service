@@ -422,8 +422,66 @@
         </div>
     </div>
 
+    <!-- Chatbot Widget -->
+
+    <div id="chatbotWidget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+
+      <!-- Chat Panel -->
+      <div id="chatPanel" class="hidden mb-4 w-[350px] sm:w-[380px] max-w-[90vw] h-[520px] max-h-[75vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100">
+
+        <!-- Header -->
+        <div class="bg-[#1E3A8A] px-5 py-4 flex items-center gap-3">
+          <div class="relative w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden">
+            <img src="/assets/chatbot-avatar.png" alt="Navi Avatar" class="w-full h-full object-cover" onerror="botAvatarFallback(this)">
+          </div>
+          <div class="flex-1">
+            <p class="text-white text-sm font-semibold">Navi — Ticket Assistant</p>
+            <p class="text-blue-200 text-xs flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span> Online
+            </p>
+          </div>
+          <button id="chatCloseBtn" class="text-blue-200 hover:text-white text-lg leading-none">
+            &times;
+          </button>
+        </div>
+
+        <!-- Messages -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#F8FAFC]"></div>
+
+        <!-- Quick Options (dynamic) -->
+        <div id="chatOptions" class="px-4 pb-2 flex flex-wrap gap-2"></div>
+
+        <!-- Input -->
+        <form id="chatForm" class="flex items-center gap-2 px-4 py-3 border-t border-slate-100 bg-white">
+          <input id="chatInput" type="text" placeholder="Type your message..." autocomplete="off"
+            class="flex-1 bg-[#F8FAFC] border border-[#E5E7EB] rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
+          <button type="submit" class="w-10 h-10 rounded-full bg-[#10B981] flex items-center justify-center text-white hover:bg-emerald-600 transition-colors shrink-0 text-sm">
+            ➤
+          </button>
+        </form>
+      </div>
+
+      <!-- Floating Bubble Button -->
+      <button id="chatToggleBtn" class="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center hover:scale-105 transition-transform relative overflow-hidden">
+        <span class="absolute top-1 right-1 w-3.5 h-3.5 bg-[#10B981] rounded-full border-2 border-white z-10"></span>
+        <img src="/assets/chatbot-avatar.png" alt="Chatbot" class="w-full h-full object-cover" onerror="botAvatarFallback(this)">
+      </button>
+    </div>
+
     <!-- 8. APP SCRIPTS -->
     <script>
+        // Fallback: if /assets/chatbot-avatar.png is missing, show a built-in robot icon instead of a broken image
+        function botAvatarFallback(imgEl) {
+          imgEl.onerror = null;
+          const wrapper = imgEl.parentElement;
+          wrapper.innerHTML = `
+            <svg viewBox="0 0 64 64" class="w-full h-full p-1.5">
+              <rect x="6" y="16" width="52" height="32" rx="16" fill="#3B82F6"/>
+              <rect x="9" y="19" width="46" height="26" rx="13" fill="#0B1220"/>
+              <circle cx="24" cy="32" r="5.5" fill="#ffffff"/>
+              <circle cx="40" cy="32" r="5.5" fill="#ffffff"/>
+            </svg>`;
+        }
         // Filter Rows Function
         function filterStatus(status, element) {
             const tabs = document.querySelectorAll('.tab-btn');
@@ -528,6 +586,227 @@
                 modal.classList.add('hidden');
             }, 300);
         }
+
+        // ================= Chatbot Widget (Navi) =================
+        const chatPanel = document.getElementById('chatPanel');
+        const chatToggleBtn = document.getElementById('chatToggleBtn');
+        const chatCloseBtn = document.getElementById('chatCloseBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatOptions = document.getElementById('chatOptions');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+
+        let chatStarted = false;
+
+        function addBotMessage(text) {
+          const div = document.createElement('div');
+          div.className = 'flex justify-start';
+          div.innerHTML = `
+            <div class="max-w-[80%] bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-slate-700 shadow-sm">
+              ${text}
+            </div>`;
+          chatMessages.appendChild(div);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addUserMessage(text) {
+          const div = document.createElement('div');
+          div.className = 'flex justify-end';
+          div.innerHTML = `
+            <div class="max-w-[80%] bg-[#1E3A8A] text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm">
+              ${text}
+            </div>`;
+          chatMessages.appendChild(div);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+          const div = document.createElement('div');
+          div.id = 'typingIndicator';
+          div.className = 'flex justify-start';
+          div.innerHTML = `
+            <div class="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay:0ms"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay:150ms"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay:300ms"></span>
+            </div>`;
+          chatMessages.appendChild(div);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+          const el = document.getElementById('typingIndicator');
+          if (el) el.remove();
+        }
+
+        function botSay(text, delay = 700) {
+          showTyping();
+          return new Promise(resolve => {
+            setTimeout(() => {
+              hideTyping();
+              addBotMessage(text);
+              resolve();
+            }, delay);
+          });
+        }
+
+        function setOptions(options) {
+          chatOptions.innerHTML = '';
+          options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.textContent = opt.label;
+            btn.className = 'px-3 py-2 rounded-full border border-[#1E3A8A]/20 text-[#1E3A8A] text-xs font-medium hover:bg-[#1E3A8A] hover:text-white transition-colors';
+            btn.addEventListener('click', () => {
+              addUserMessage(opt.label);
+              clearOptions();
+              setTimeout(() => opt.action(), 350);
+            });
+            chatOptions.appendChild(btn);
+          });
+        }
+
+        function clearOptions() {
+          chatOptions.innerHTML = '';
+        }
+
+        function askAnythingElse() {
+          botSay('Is there anything else I can help you with? 😊', 600).then(() => {
+            setOptions([
+              { label: 'Yes, I have another question', action: showMainOptions },
+              { label: 'No, that\'s all, thank you', action: endChat },
+            ]);
+          });
+        }
+
+        function endChat() {
+          botSay(
+            "You're welcome! If you need anything else, I'll be right here. Have a great day! 😊",
+            600
+          );
+        }
+
+        function showMainOptions() {
+          botSay('No worries, just pick what you need below and I\'ll walk you through it:', 500).then(() => {
+            setOptions([
+              { label: '🎫 What is a ticket?', action: handleWhatIsTicket },
+              { label: '📝 How do I create a ticket?', action: handleHowToCreate },
+              { label: '📊 Check my ticket status', action: handleTicketStatus },
+              { label: '❓ Something else', action: handleGeneralSupport },
+            ]);
+          });
+        }
+
+        function handleWhatIsTicket() {
+          botSay(
+            "Great question! A <span class='font-semibold'>support ticket</span> is simply a record of your issue or request " +
+            "— like a login problem, a payment issue, or a feature request. Once it's created, our team can track it, " +
+            "assign the right agent, and update you until it's resolved. Think of it as your direct line to getting help. 🎫"
+          ).then(askAnythingElse);
+        }
+
+        function handleHowToCreate() {
+          botSay(
+            "Sure! Here's how to create a new ticket, step by step:"
+          , 500).then(() => botSay(
+            "1️⃣ Click the green <span class='font-semibold'>\"+ New Ticket\"</span> button at the top right of the page.<br>" +
+            "2️⃣ Fill in your <span class='font-semibold'>Customer Name</span> and <span class='font-semibold'>Email Address</span>.<br>" +
+            "3️⃣ Choose a <span class='font-semibold'>Category</span> (e.g. Billing, Bug, Feature) and set the <span class='font-semibold'>Priority Level</span>.<br>" +
+            "4️⃣ Pick the <span class='font-semibold'>Assigned Agent</span> who will handle it.<br>" +
+            "5️⃣ Add a short <span class='font-semibold'>Subject</span> and a <span class='font-semibold'>Full Description</span> explaining the issue.<br>" +
+            "6️⃣ Click <span class='font-semibold'>Save</span> — and that's it, your ticket is submitted! ✅"
+          , 900)).then(askAnythingElse);
+        }
+
+        function handleTicketStatus() {
+          botSay(
+            "You can check your ticket's progress right from this page — look at the <span class='font-semibold'>Status</span> column. " +
+            "Tickets usually move through: <span class='font-semibold'>Open → Pending → In Progress → Resolved</span>. " +
+            "You can also click any ticket row to open its full details, or use the tabs at the top to filter by status."
+          ).then(askAnythingElse);
+        }
+
+        function handleGeneralSupport() {
+          botSay(
+            "No problem! You can type your question below and I'll do my best to help, or one of our support staff " +
+            "can follow up with you directly. 🙂"
+          ).then(askAnythingElse);
+        }
+
+        function handlePriorityQuestion() {
+          botSay(
+            "Priority levels help us know how urgent your issue is:<br>" +
+            "🔴 <span class='font-semibold'>Critical</span> — major issue, needs immediate attention<br>" +
+            "🟠 <span class='font-semibold'>High</span> — important, handled soon<br>" +
+            "🟡 <span class='font-semibold'>Medium</span> — normal priority<br>" +
+            "⚪ <span class='font-semibold'>Low</span> — minor issue, no rush"
+          ).then(askAnythingElse);
+        }
+
+        function handleContactQuestion() {
+          botSay(
+            "You can reach our support team anytime through this dashboard, or use the 'New Ticket' button to submit " +
+            "your request directly so an agent can follow up with you."
+          ).then(askAnythingElse);
+        }
+
+        function handleFreeText(text) {
+          const t = text.toLowerCase();
+
+          if (t.includes('what is a ticket') || t.includes('what is ticket') || (t.includes('what') && t.includes('ticket'))) {
+            handleWhatIsTicket();
+          } else if (t.includes('how') && (t.includes('create') || t.includes('fill') || t.includes('submit') || t.includes('make'))) {
+            handleHowToCreate();
+          } else if (t.includes('status') || t.includes('progress') || t.includes('track')) {
+            handleTicketStatus();
+          } else if (t.includes('priority') || t.includes('urgent') || t.includes('critical')) {
+            handlePriorityQuestion();
+          } else if (t.includes('contact') || t.includes('reach') || t.includes('agent')) {
+            handleContactQuestion();
+          } else if (t.includes('thank') || t.includes('bye')) {
+            endChat();
+          } else {
+            botSay(
+              "Hmm, I might not have the exact answer to that one. 🙂 But here's how I can help — pick an option below, " +
+              "or try asking in a different way!"
+            ).then(() => {
+              setOptions([
+                { label: '🎫 What is a ticket?', action: handleWhatIsTicket },
+                { label: '📝 How do I create a ticket?', action: handleHowToCreate },
+                { label: '📊 Check my ticket status', action: handleTicketStatus },
+              ]);
+            });
+          }
+        }
+
+        function openChat() {
+          chatPanel.classList.remove('hidden');
+          chatToggleBtn.classList.add('hidden');
+          if (!chatStarted) {
+            chatStarted = true;
+            botSay(
+              "Hello dear customer! 👋 I'm <span class='font-semibold'>Navi</span>, your friendly ticket assistant. What can I help you with today?",
+              600
+            ).then(showMainOptions);
+          }
+        }
+
+        function closeChat() {
+          chatPanel.classList.add('hidden');
+          chatToggleBtn.classList.remove('hidden');
+        }
+
+        chatToggleBtn.addEventListener('click', openChat);
+        chatCloseBtn.addEventListener('click', closeChat);
+
+        chatForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const text = chatInput.value.trim();
+          if (!text) return;
+          addUserMessage(text);
+          chatInput.value = '';
+          clearOptions();
+          handleFreeText(text);
+        });
     </script>
 
 </body>

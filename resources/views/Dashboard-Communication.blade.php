@@ -157,8 +157,22 @@
             </div>
 
             <div class="bg-white rounded-3xl shadow-sm p-6">
-              <h3 class="text-lg font-bold text-slate-800 mb-4">Top Campaigns</h3>
-              <div class="space-y-4" id="topCampaigns"></div>
+              <h3 class="text-lg font-bold text-slate-800 mb-4">Top Staff</h3>
+              <div class="space-y-4">
+                @forelse($topStaff as $staff)
+                  <div>
+                    <div class="flex items-center justify-between text-sm mb-1.5">
+                      <span class="font-medium text-slate-700">{{ $staff['name'] }}</span>
+                      <span class="text-slate-400">{{ $staff['total'] }} logs &middot; {{ $staff['percent'] }}% done</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-blue-400 rounded-full" style="width:{{ $staff['percent'] }}%"></div>
+                    </div>
+                  </div>
+                @empty
+                  <p class="text-sm text-slate-400">No staff activity recorded yet.</p>
+                @endforelse
+              </div>
             </div>
 
           </div>
@@ -206,17 +220,32 @@
             </div>
           </div>
 
-          <!-- Campaign Schedule -->
+          <!-- Recent Communications -->
           <div class="bg-white rounded-3xl shadow-sm p-6">
             <div class="flex items-center justify-between mb-5">
-              <h3 class="text-lg font-bold text-slate-800">Campaign Schedule</h3>
-              <button class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#1E3A8A] text-white text-xs font-semibold hover:bg-[#1E3A8A]/90 transition-colors">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Schedule
-              </button>
+              <h3 class="text-lg font-bold text-slate-800">Recent Communications</h3>
+              <a href="{{ route('communication.index') }}" class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#1E3A8A] text-white text-xs font-semibold hover:bg-[#1E3A8A]/90 transition-colors">
+                View All
+              </a>
             </div>
 
-            <div class="relative pl-6" id="campaignSchedule">
+            <div class="relative pl-6">
               <div class="absolute left-[7px] top-2 bottom-2 w-px bg-slate-200"></div>
+              @forelse($recentCommunications as $comm)
+                <div class="relative mb-5 last:mb-0">
+                  <span class="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue-500 ring-4 ring-white"></span>
+                  <p class="text-xs text-slate-400 mb-1">{{ $comm->date }}</p>
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-slate-800">{{ $comm->customer_name }}</p>
+                      <p class="text-xs text-slate-400 mt-0.5">{{ $comm->subject }}</p>
+                    </div>
+                    <span class="text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-lg whitespace-nowrap">{{ ucfirst($comm->status) }}</span>
+                  </div>
+                </div>
+              @empty
+                <p class="text-sm text-slate-400">No communications logged yet.</p>
+              @endforelse
             </div>
           </div>
 
@@ -388,46 +417,6 @@
     },
     options: commonBarOptions,
   });
-
-  // ---- Top Campaigns (progress bars) ----
-  const campaigns = [
-    { name: 'Spring Sale 2024', rate: 68 },
-    { name: 'Product Update', rate: 52 },
-    { name: 'Weekly Digest', rate: 41 },
-  ];
-
-  document.getElementById('topCampaigns').innerHTML = campaigns.map(c => `
-    <div>
-      <div class="flex items-center justify-between text-sm mb-1.5">
-        <span class="font-medium text-slate-700">${c.name}</span>
-        <span class="text-slate-400">${c.rate}% OR</span>
-      </div>
-      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-        <div class="h-full bg-blue-400 rounded-full" style="width:${c.rate}%"></div>
-      </div>
-    </div>
-  `).join('');
-
-  // ---- Campaign Schedule (timeline) ----
-  const schedule = [
-    { day: 'Today', title: 'Product Launch Email', detail: 'Segment: All Active Users (45k)', time: '10:00 AM', active: true },
-    { day: 'Wed', title: 'Newsletter #47', detail: '', time: '2:00 PM', active: false },
-    { day: 'Fri', title: 'Re-engagement Blast', detail: '', time: '11:00 AM', active: false, highlight: true },
-  ];
-
-  document.getElementById('campaignSchedule').innerHTML += schedule.map(s => `
-    <div class="relative mb-5 last:mb-0">
-      <span class="absolute -left-6 top-1 w-3 h-3 rounded-full ${s.active ? 'bg-blue-500' : (s.highlight ? 'bg-purple-500' : 'bg-slate-300')} ring-4 ring-white"></span>
-      <p class="text-xs text-slate-400 mb-1">${s.day}</p>
-      <div class="flex items-center justify-between gap-3 ${s.active ? 'bg-blue-50 rounded-xl px-3 py-2.5' : ''}">
-        <div>
-          <p class="text-sm font-semibold ${s.highlight ? 'text-purple-600' : 'text-slate-800'}">${s.title}</p>
-          ${s.detail ? `<p class="text-xs text-slate-400 mt-0.5">${s.detail}</p>` : ''}
-        </div>
-        <span class="text-xs font-medium ${s.active ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'} px-2 py-1 rounded-lg whitespace-nowrap">${s.time}</span>
-      </div>
-    </div>
-  `).join('');
 </script>
 
 </body>

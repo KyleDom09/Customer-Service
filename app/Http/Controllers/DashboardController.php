@@ -29,7 +29,6 @@ class DashboardController extends Controller
 
         $recentLogs = ActivityLog::orderByDesc('logged_at')->take(4)->get();
 
-        // CSAT computation base sa Agent csat_score
         $allAgentsForCsat = Agent::all();
         $overallCsat = $allAgentsForCsat->count() > 0
             ? round($allAgentsForCsat->avg('csat_score'), 1)
@@ -44,7 +43,6 @@ class DashboardController extends Controller
         $goodPercent = round(($goodCount / $totalAgentsForCsat) * 100);
         $fairPercent = round(($fairCount / $totalAgentsForCsat) * 100);
 
-        // Ticket summary counts (matched sa Ticket Management submodule metrics)
         $totalTickets = Ticket::count();
         $openTickets = Ticket::where('status', 'OPEN')->count();
         $closedTickets = Ticket::where('status', 'CLOSED')->count();
@@ -52,14 +50,10 @@ class DashboardController extends Controller
 
         $pendingTickets = Ticket::where('status', 'PENDING')->count();
 
-        // Build dynamic period data (Today / This Week / This Month)
         $todayResolved = Ticket::where('status', 'RESOLVED')->whereDate('resolved_at', today())->count();
-
         $weekResolved = Ticket::where('status', 'RESOLVED')->whereBetween('resolved_at', [now()->startOfWeek(), now()->endOfWeek()])->count();
-
         $monthResolved = Ticket::where('status', 'RESOLVED')->whereMonth('resolved_at', now()->month)->whereYear('resolved_at', now()->year)->count();
 
-        // Chart: last 5 days (Today), last 4 weeks (This Week), last 6 months (This Month)
         $last5Days = collect(range(4, 0))->map(fn ($i) => now()->subDays($i));
         $dailyLabels = $last5Days->map(fn ($d) => $d->format('D'))->toArray();
         $dailyReceived = $last5Days->map(fn ($d) => Ticket::whereDate('created_at', $d)->count())->toArray();

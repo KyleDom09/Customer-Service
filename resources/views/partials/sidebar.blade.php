@@ -26,22 +26,45 @@
             @endif
         </a>
 
-        {{-- Ticket Management --}}
-        <a href="{{ url('/customer-service/ticket-management') }}"
-        class="flex items-center justify-between px-4 py-3.5 rounded-lg transition
+        {{-- Ticket Management (link + separate chevron toggle) --}}
+        <div>
+            <div class="flex items-center justify-between rounded-lg
                 {{ request()->is('customer-service/ticket-management*')
                         ? 'bg-white/5 text-white ring-1 ring-green-400/40 shadow-[0_0_10px_rgba(74,222,128,0.15)]'
-                        : 'text-blue-200 hover:bg-[#152a63] hover:text-white' }}">
-            <div class="flex items-center gap-3.5">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
-                </svg>
-                <span class="font-medium">Ticket Management</span>
+                        : '' }}">
+                <a href="{{ url('/customer-service/ticket-management') }}"
+                class="flex items-start gap-3.5 px-4 py-3.5
+                        {{ request()->is('customer-service/ticket-management*')
+                                ? 'text-white'
+                                : 'text-blue-200 hover:bg-[#152a63] hover:text-white' }}">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
+                    </svg>
+                    <span class="font-medium leading-tight">Ticket Management</span>
+                </a>
+                <button id="ticketMgmtToggle" type="button" class="flex items-center gap-2 pr-4 py-3.5 pl-2 self-center shrink-0 rounded-lg hover:bg-[#152a63] transition">
+                    @if (request()->is('customer-service/ticket-management*'))
+                        <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+                    @endif
+                    <svg id="ticketMgmtChevron" class="w-4 h-4 text-blue-200 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                    </svg>
+                </button>
             </div>
-            @if (request()->is('customer-service/ticket-management*'))
-                <span class="w-2 h-2 rounded-full bg-green-400"></span>
-            @endif
-        </a>
+
+            <div id="ticketMgmtSubmenu" class="mt-1 pl-4 space-y-1 {{ request()->is('customer-service/ticket-management/analytics*') ? '' : 'hidden' }}">
+                <a href="{{ route('tickets.analytics') }}"
+                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition
+                        {{ request()->is('customer-service/ticket-management/analytics*')
+                                ? 'bg-white/10 text-white'
+                                : 'text-blue-200 hover:bg-[#152a63] hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                    </svg>
+                    <span class="font-medium">Ticket Analytics</span>
+                </a>
+            </div>
+        </div>
 
         {{-- Self-Service Portal --}}
         <a href="{{ url('/customer-service/self-service') }}"
@@ -145,5 +168,14 @@
     commHistoryToggle.addEventListener('click', () => {
         commHistorySubmenu.classList.toggle('hidden');
         commHistoryChevron.classList.toggle('rotate-180');
+    });
+
+    const ticketMgmtToggle = document.getElementById('ticketMgmtToggle');
+    const ticketMgmtSubmenu = document.getElementById('ticketMgmtSubmenu');
+    const ticketMgmtChevron = document.getElementById('ticketMgmtChevron');
+
+    ticketMgmtToggle.addEventListener('click', () => {
+        ticketMgmtSubmenu.classList.toggle('hidden');
+        ticketMgmtChevron.classList.toggle('rotate-180');
     });
 </script>

@@ -79,12 +79,10 @@
 
             container.appendChild(toast);
 
-            // Trigger fade-in
             requestAnimationFrame(() => {
                 toast.classList.remove('opacity-0', 'translate-y-2');
             });
 
-            // Auto-dismiss after 3 seconds
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);

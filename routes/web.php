@@ -55,6 +55,7 @@ Route::prefix('customer-service')->group(function () {
     Route::prefix('ticket-management')->group(function () {
 
         Route::get('/', [TicketController::class, 'index'])->name('ticketmanagement');
+        Route::get('/analytics', [TicketController::class, 'analytics'])->name('tickets.analytics');
         Route::post('/', [TicketController::class, 'store'])->name('tickets.store');
         Route::put('/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
         Route::delete('/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
@@ -79,8 +80,7 @@ Route::prefix('customer-service')->group(function () {
     Route::post('/communication-history/store', [CommunicationController::class, 'store'])
         ->name('communication.store');
 
-    Route::get('/dashboard-history', function () {
-        return view('Dashboard-Communication');
-    })->name('dashboard.history');
+    Route::get('/dashboard-history', [CommunicationController::class, 'dashboardHistory'])
+        ->name('dashboard.history');
 
 });

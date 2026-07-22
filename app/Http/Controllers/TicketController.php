@@ -119,6 +119,35 @@ class TicketController extends Controller
         return redirect()->route('ticketmanagement')->with('success', 'Matagumpay na na-delete ang ticket!');
     }
 
+    // Ito ang method para sa Ticket Analytics page (real data mula sa database)
+    public function analytics()
+    {
+        // Bilang ng tickets kada status
+        $statusCounts = Ticket::selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        // Bilang ng tickets kada priority
+        $priorityCounts = Ticket::selectRaw('priority, COUNT(*) as total')
+            ->groupBy('priority')
+            ->pluck('total', 'priority');
+
+        // Bilang ng tickets kada agent (workload distribution)
+        $agentCounts = Ticket::with('agentModel')
+            ->selectRaw('agent_id, COUNT(*) as total')
+            ->whereNotNull('agent_id')
+            ->groupBy('agent_id')
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'name'  => $row->agentModel->name ?? 'Unassigned',
+                    'total' => $row->total,
+                ];
+            });
+
+        return view('Ticket-Analytics', compact('statusCounts', 'priorityCounts', 'agentCounts'));
+    }
+
     // Helper: kinukwenta ang % pagbabago sa pagitan ng dalawang bilang
     // (linggong ito kumpara sa nakaraang linggo), tapos ini-format
     // bilang string na tulad ng "▲ 12.5%" o "▼ 8.2%"
