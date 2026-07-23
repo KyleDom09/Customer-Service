@@ -18,8 +18,13 @@ class Communication extends Model
         'status',
         'priority',
         'resp_time',
+        'resolved_at',
         'agent_id',
         'ticket_id',
+    ];
+
+    protected $casts = [
+        'resolved_at' => 'datetime',
     ];
 
     public function agent()

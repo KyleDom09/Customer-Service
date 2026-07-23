@@ -80,6 +80,9 @@ Route::prefix('customer-service')->group(function () {
     Route::post('/communication-history/store', [CommunicationController::class, 'store'])
         ->name('communication.store');
 
+    Route::put('/communication-history/{id}', [CommunicationController::class, 'update'])
+        ->name('communication.update');
+
     Route::get('/dashboard-history', [CommunicationController::class, 'dashboardHistory'])
         ->name('dashboard.history');
 
