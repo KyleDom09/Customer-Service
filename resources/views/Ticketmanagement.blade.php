@@ -23,11 +23,27 @@
                 <span class="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
             </div>
             <div class="flex items-center gap-4">
-                <div class="flex items-center gap-3 border-l border-slate-200 pl-4">
-                    <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">TF</div>
-                    <div>
-                        <div class="text-xs font-semibold text-slate-800">Timoty Filoteo</div>
-                        <div class="text-[10px] text-slate-400">Ticket Manager</div>
+                <div class="relative" id="profileMenuWrapper">
+                    <div class="flex items-center gap-3 border-l border-slate-200 pl-4 cursor-pointer" id="profileMenuBtn">
+                        <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-800">{{ auth()->user()->name }}</div>
+                            <div class="text-[10px] text-slate-400">{{ auth()->user()->role ?? 'Ticket Manager' }}</div>
+                        </div>
+                    </div>
+                    <div id="profileMenuDropdown" class="hidden absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-30">
+                        <div class="px-4 py-2 border-b border-slate-100">
+                            <p class="text-xs font-semibold text-slate-700 truncate">{{ auth()->user()->name }}</p>
+                            <p class="text-[10px] text-slate-400 truncate">{{ auth()->user()->email }}</p>
+                        </div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-red-50">
+                                Log out
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -806,6 +822,19 @@
           chatInput.value = '';
           clearOptions();
           handleFreeText(text);
+        });
+
+        // ================= Profile Dropdown =================
+        const profileBtn = document.getElementById('profileMenuBtn');
+        const profileDropdown = document.getElementById('profileMenuDropdown');
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
+                profileDropdown.classList.add('hidden');
+            }
         });
     </script>
 

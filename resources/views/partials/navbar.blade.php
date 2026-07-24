@@ -111,13 +111,31 @@
         </div>
 
         {{-- Admin Profile --}}
-        <div class="flex items-center gap-3">
-            <div class="text-right">
-                <p class="text-navy font-semibold text-sm leading-tight">Admin Profile</p>
-                <p class="text-gray-400 text-xs leading-tight">Super Administrator</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-navy flex items-center justify-center text-white font-semibold text-sm">
-                AP
+        <div class="relative">
+            <button id="profileMenuBtn" type="button" class="flex items-center gap-3 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition">
+                <div class="text-right">
+                    <p class="text-navy font-semibold text-sm leading-tight">{{ auth()->user()->name }}</p>
+                    <p class="text-gray-400 text-xs leading-tight">{{ auth()->user()->role ?? 'Administrator' }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-navy flex items-center justify-center text-white font-semibold text-sm shrink-0">
+                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                </div>
+            </button>
+
+            <div id="profileMenuDropdown" class="hidden absolute right-0 mt-3 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <p class="text-navy font-semibold text-sm truncate">{{ auth()->user()->name }}</p>
+                    <p class="text-gray-400 text-xs truncate">{{ auth()->user()->email }}</p>
+                </div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H3" />
+                        </svg>
+                        Log out
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -158,5 +176,16 @@
         if (notifMenu && notifBtn && !notifMenu.contains(event.target) && !notifBtn.contains(event.target)) {
             notifMenu.classList.add('hidden');
         }
+
+        const profileMenu = document.getElementById('profileMenuDropdown');
+        const profileBtn = document.getElementById('profileMenuBtn');
+        if (profileMenu && profileBtn && !profileMenu.contains(event.target) && !profileBtn.contains(event.target)) {
+            profileMenu.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('profileMenuBtn')?.addEventListener('click', function (event) {
+        event.stopPropagation();
+        document.getElementById('profileMenuDropdown').classList.toggle('hidden');
     });
 </script>

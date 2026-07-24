@@ -87,35 +87,10 @@
           <i data-lucide="bell" class="w-5 h-5"></i>
           <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#10B981] rounded-full"></span>
         </button>
-        <div class="relative" id="profileMenuWrapper">
-          <div class="flex items-center gap-2 cursor-pointer" id="profileMenuBtn">
-            @if (auth()->user()->avatar ?? false)
-              <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-9 h-9 rounded-full object-cover">
-            @else
-              <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-semibold text-sm">
-                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-              </div>
-            @endif
-            <span class="hidden sm:block text-sm font-semibold text-slate-700 dark:text-slate-100">
-              {{ auth()->user()->name }}
-            </span>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
-          </div>
-
-          <!-- Dropdown -->
-          <div id="profileMenuDropdown" class="hidden absolute right-0 mt-3 w-48 bg-white dark:bg-[#1e1e1e] border border-slate-100 dark:border-slate-700 rounded-xl shadow-lg py-2 z-30">
-            <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
-              <p class="text-sm font-semibold text-slate-700 dark:text-slate-100 truncate">{{ auth()->user()->name }}</p>
-              <p class="text-xs text-slate-400 dark:text-slate-500 truncate">{{ auth()->user()->email }}</p>
-            </div>
-            <form method="POST" action="{{ route('logout') }}">
-              @csrf
-              <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2">
-                <i data-lucide="log-out" class="w-4 h-4"></i>
-                Log out
-              </button>
-            </form>
-          </div>
+        <div class="flex items-center gap-2 cursor-pointer">
+          <img src="/assets/benju.jpg" alt="Agent Benju" class="w-9 h-9 rounded-full object-cover">
+          <span class="hidden sm:block text-sm font-semibold text-slate-700 dark:text-slate-100"> Agent Benju </span>>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
         </div>
       </div>
     </header>
@@ -888,19 +863,6 @@
   document.getElementById('themeToggleBtn').addEventListener('click', () => {
     const isDark = document.documentElement.classList.contains('dark');
     applyTheme(isDark ? 'light' : 'dark');
-  });
-
-  // ================= Profile Dropdown =================
-  const profileBtn = document.getElementById('profileMenuBtn');
-  const profileDropdown = document.getElementById('profileMenuDropdown');
-  profileBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    profileDropdown.classList.toggle('hidden');
-  });
-  document.addEventListener('click', (e) => {
-    if (!profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
-      profileDropdown.classList.add('hidden');
-    }
   });
 
   lucide.createIcons();

@@ -9,12 +9,28 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\SlaController;
 use App\Http\Controllers\CommunicationController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::prefix('customer-service')->group(function () {
+// ===================== Auth =====================
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
+
+    Route::get('/signup', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/signup', [RegisterController::class, 'register']);
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+});
+// ==================================================
+
+Route::prefix('customer-service')->middleware('auth')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');

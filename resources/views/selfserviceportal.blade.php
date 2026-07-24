@@ -290,8 +290,8 @@
                     </div>
                     <div class="relative border-l pl-4 border-slate-200" @click.outside="isProfileOpen = false">
                         <button @click="isProfileOpen = !isProfileOpen" class="flex items-center space-x-2 cursor-pointer">
-                            <img src="https://ui-avatars.com/api/?name=Henry+Taylee&background=dbeafe&color=1e3a8a" alt="User Avatar" class="w-8 h-8 rounded-full">
-                            <span class="text-sm font-medium text-slate-700">Henry Taylee</span>
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=dbeafe&color=1e3a8a" alt="{{ auth()->user()->name }}" class="w-8 h-8 rounded-full">
+                            <span class="text-sm font-medium text-slate-700">{{ auth()->user()->name }}</span>
                             <i class="fas fa-chevron-down text-xs text-slate-400 transition" :class="isProfileOpen ? 'rotate-180' : ''"></i>
                         </button>
 
@@ -299,10 +299,10 @@
                              class="absolute right-0 mt-3 w-64 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-20"
                              style="display: none;">
                             <div class="p-4 flex items-center space-x-3 border-b border-slate-100">
-                                <img src="https://ui-avatars.com/api/?name=Henry+Taylee&background=dbeafe&color=1e3a8a" alt="User Avatar" class="w-10 h-10 rounded-full">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=dbeafe&color=1e3a8a" alt="{{ auth()->user()->name }}" class="w-10 h-10 rounded-full">
                                 <div>
-                                    <p class="text-sm font-bold text-blue-900">Henry Taylee</p>
-                                    <p class="text-xs text-slate-400">Support Agent</p>
+                                    <p class="text-sm font-bold text-blue-900">{{ auth()->user()->name }}</p>
+                                    <p class="text-xs text-slate-400">{{ auth()->user()->email }}</p>
                                 </div>
                                 <span class="ml-auto flex items-center space-x-1 text-[11px] text-emerald-600 font-semibold">
                                     <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
@@ -327,6 +327,13 @@
                                     <p class="text-[10px] text-slate-400">CSAT Score</p>
                                 </div>
                             </div>
+                            <form method="POST" action="{{ route('logout') }}" class="border-t border-slate-100">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Log out
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
