@@ -20,8 +20,8 @@ return new class extends Migration
             $table->enum('priority', ['high', 'medium', 'low'])->default('medium');
             $table->string('resp_time')->nullable();
             $table->timestamp('resolved_at')->nullable();
-            $table->foreignId('agent_id')->nullable()->constrained('agents')->nullOnDelete();
-            $table->foreignId('ticket_id')->nullable()->constrained('tickets')->nullOnDelete();
+            $table->unsignedBigInteger('agent_id')->nullable();
+            $table->unsignedBigInteger('ticket_id')->nullable();
             $table->timestamps();
         });
     }

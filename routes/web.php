@@ -11,6 +11,7 @@ use App\Http\Controllers\SlaController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\RefundRequestController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -64,6 +65,10 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
         Route::get('/articles', [ArticleController::class, 'index']);
         Route::post('/articles', [ArticleController::class, 'store']);
         Route::patch('/articles/{article}/rate', [ArticleController::class, 'rate']);
+        
+        Route::get('/refund-requests', [RefundRequestController::class, 'index']);
+        Route::post('/refund-requests', [RefundRequestController::class, 'store']);
+        
 
     });
 

@@ -21,6 +21,15 @@
         isProfileOpen: false,
         isNotifOpen: false,
         isSearchOpen: false,
+        isRefundFormOpen: false,
+        isSubmittingRefund: false,
+        refundSubmitted: false,
+        refundTitle: '',
+        refundDescription: '',
+        refundImageName: '',
+        refundImagePreview: '',
+        refundImageFile: null,
+        refundRequests: [],
         notifications: [
             { text: 'Welcome to the Self-Service Portal!', time: 'Just now', read: true }
         ],
@@ -35,6 +44,82 @@
         },
         csrfToken() {
             return document.querySelector('meta[name=csrf-token]').getAttribute('content');
+        },
+        handleRefundImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            this.refundImageFile = file;
+            this.refundImageName = file.name;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.refundImagePreview = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        },
+        resetRefundForm() {
+            this.refundTitle = '';
+            this.refundDescription = '';
+            this.refundImageName = '';
+            this.refundImagePreview = '';
+            this.refundImageFile = null;
+            if (this.$refs && this.$refs.refundImageInput) {
+                this.$refs.refundImageInput.value = '';
+            }
+        },
+        async submitRefundRequest() {
+            if (this.refundTitle.trim() === '') {
+                alert('Please enter a title.');
+                return;
+            }
+
+            this.isSubmittingRefund = true;
+
+            let formData = new FormData();
+            formData.append('title', this.refundTitle);
+            formData.append('description', this.refundDescription);
+            if (this.refundImageFile) {
+                formData.append('image', this.refundImageFile);
+            }
+
+            try {
+                const response = await fetch('/customer-service/self-service/refund-requests', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': this.csrfToken()
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Failed to submit refund request');
+
+                const saved = await response.json();
+
+                // Merge server data with the local image preview so it displays
+                // immediately without needing to re-fetch the stored file.
+                this.refundRequests.unshift({
+                    id: saved.id,
+                    title: saved.title,
+                    description: saved.description,
+                    status: saved.status,
+                    imagePreview: this.refundImagePreview,
+                    submittedAt: new Date(saved.created_at).toLocaleString()
+                });
+
+                this.addNotification('Return request sent: ' + saved.title);
+                this.refundSubmitted = true;
+            } catch (e) {
+                console.error('Failed to submit refund request', e);
+                alert('Something went wrong. Please try again.');
+            } finally {
+                this.isSubmittingRefund = false;
+            }
+        },
+        closeRefundModal() {
+            this.isRefundFormOpen = false;
+            this.refundSubmitted = false;
+            this.resetRefundForm();
         },
         async rateItem(item, stars) {
             item.rating = stars;
@@ -164,6 +249,25 @@
                 }
             } catch (e) {
                 console.error('Failed to load data from database, keeping defaults', e);
+            }
+
+            try {
+                const refundRes = await fetch('/customer-service/self-service/refund-requests');
+                const dbRefunds = await refundRes.json();
+                if (Array.isArray(dbRefunds)) {
+                    // Map DB fields (image_path / created_at) to the same shape
+                    // submitRefundRequest() uses (imagePreview / submittedAt).
+                    this.refundRequests = dbRefunds.map(r => ({
+                        id: r.id,
+                        title: r.title,
+                        description: r.description,
+                        status: r.status,
+                        imagePreview: r.image_path ? '/storage/' + r.image_path : '',
+                        submittedAt: new Date(r.created_at).toLocaleString()
+                    }));
+                }
+            } catch (e) {
+                console.error('Failed to load refund requests', e);
             }
         },
         async addNewArticle() {
@@ -631,10 +735,30 @@
 
                 <template x-if="currentView === 'returns'">
                     <div class="max-w-5xl mx-auto bg-white p-8 rounded-2xl border border-slate-200 space-y-6">
-                        <div>
-                            <h3 class="text-xl font-bold text-blue-900">Returns, Refunds & Warranty</h3>
-                            <p class="text-xs text-slate-400 mt-1">Review return eligibility, warranty protection guidelines, and credit processing timelines.</p>
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-900">Returns, Refunds & Warranty</h3>
+                                <p class="text-xs text-slate-400 mt-1">Review return eligibility, warranty protection guidelines, and credit processing timelines.</p>
+                            </div>
+                            <button @click="isRefundFormOpen = true" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800">
+                                <i class="fas fa-paper-plane"></i>
+                                New Return Request
+                            </button>
                         </div>
+
+                        <div class="rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-slate-50 p-5">
+                            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <h4 class="text-sm font-bold text-blue-900">Need help with a return or refund?</h4>
+                                    <p class="text-xs text-slate-500">Upload a photo, add a short title, and describe the issue. Your request will be submitted instantly.</p>
+                                </div>
+                                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    Fast support workflow
+                                </span>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-600">
                             <div class="p-5 bg-slate-50 rounded-xl border space-y-2">
                                 <h4 class="font-bold text-blue-950 text-sm">Return Policy & Rules</h4>
@@ -647,33 +771,43 @@
                                 <p><span class="font-bold text-emerald-600">✓</span> 48-hour expedited shipping on parts</p>
                             </div>
                             <div class="p-5 bg-slate-50 rounded-xl border space-y-2">
-    <h4 class="font-bold text-blue-950 text-sm">Order & Shipping Support</h4>
-    <p><span class="font-bold text-emerald-600">✓</span> Real-time package tracking</p>
-    <p><span class="font-bold text-emerald-600">✓</span> Address modification requests</p>
-</div>
-
-<div class="p-5 bg-slate-50 rounded-xl border space-y-2">
-    <h4 class="font-bold text-blue-950 text-sm">Technical Assistance</h4>
-    <p><span class="font-bold text-emerald-600">✓</span> 24/7 self-service knowledge base</p>
-    <p><span class="font-bold text-emerald-600">✓</span> Live chat with a technician</p>
-</div>
-<div class="p-5 bg-slate-50 rounded-xl border space-y-2">
-    <h4 class="font-bold text-blue-950 text-sm">Account & Subscription</h4>
-    <p><span class="font-bold text-emerald-600">✓</span> Manage billing and payment methods</p>
-    <p><span class="font-bold text-emerald-600">✓</span> View and download past invoices</p>
-</div>
-
-<div class="p-5 bg-slate-50 rounded-xl border space-y-2">
-    <h4 class="font-bold text-blue-950 text-sm">Product Registration</h4>
-    <p><span class="font-bold text-emerald-600">✓</span> Register new hardware purchases</p>
-    <p><span class="font-bold text-emerald-600">✓</span> Access digital user manuals</p>
-</div>
-
-
-                            
-
-                            
+                                <h4 class="font-bold text-blue-950 text-sm">Order & Shipping Support</h4>
+                                <p><span class="font-bold text-emerald-600">✓</span> Real-time package tracking</p>
+                                <p><span class="font-bold text-emerald-600">✓</span> Address modification requests</p>
+                            </div>
+                            <div class="p-5 bg-slate-50 rounded-xl border space-y-2">
+                                <h4 class="font-bold text-blue-950 text-sm">Technical Assistance</h4>
+                                <p><span class="font-bold text-emerald-600">✓</span> 24/7 self-service knowledge base</p>
+                                <p><span class="font-bold text-emerald-600">✓</span> Live chat with a technician</p>
+                            </div>
                         </div>
+
+                        <template x-if="refundRequests.length > 0">
+                            <div class="space-y-3">
+                                <h4 class="text-sm font-bold text-blue-900">Recent return requests</h4>
+                                <template x-for="request in refundRequests" :key="request.id">
+                                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-sm font-semibold text-slate-800" x-text="request.title"></p>
+                                                <p class="mt-1 text-xs text-slate-500" x-text="request.description"></p>
+                                                <p class="mt-2 text-[11px] text-slate-400" x-text="'Submitted ' + request.submittedAt"></p>
+                                            </div>
+                                            <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                                                  :class="{
+                                                      'bg-amber-100 text-amber-700': request.status === 'pending',
+                                                      'bg-emerald-100 text-emerald-700': request.status === 'approved',
+                                                      'bg-rose-100 text-rose-700': request.status === 'rejected'
+                                                  }"
+                                                  x-text="request.status"></span>
+                                        </div>
+                                        <template x-if="request.imagePreview">
+                                            <img :src="request.imagePreview" alt="Refund attachment" class="mt-3 h-24 w-full rounded-lg border border-slate-200 object-cover">
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                 </template>
 
@@ -753,6 +887,78 @@
                     Save Item
                 </button>
             </div>
+        </div>
+    </div>
+
+    <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4" 
+         x-show="isRefundFormOpen" 
+         x-transition
+         style="display: none;">
+        
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-6 space-y-4">
+
+            <template x-if="!isSubmittingRefund && !refundSubmitted">
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-blue-900">Submit a Return or Refund Request</h3>
+                        <p class="text-xs text-slate-400">Upload an image of the item, add a short title, and describe the issue.</p>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="space-y-1">
+                            <label class="block font-semibold text-slate-600">Title</label>
+                            <input type="text" x-model="refundTitle" placeholder="e.g., Damaged product received" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block font-semibold text-slate-600">Description</label>
+                            <textarea x-model="refundDescription" rows="4" placeholder="Tell us what happened and what support is needed..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block font-semibold text-slate-600">Upload image</label>
+                            <input type="file" accept="image/*" x-ref="refundImageInput" @change="handleRefundImageUpload($event)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100">
+                            <template x-if="refundImagePreview">
+                                <img :src="refundImagePreview" alt="Preview" class="h-32 w-full rounded-lg border border-slate-200 object-cover">
+                            </template>
+                            <p x-show="refundImageName" class="text-[11px] text-slate-500" x-text="'Selected file: ' + refundImageName"></p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end space-x-2 pt-2 text-xs font-semibold">
+                        <button @click="isRefundFormOpen = false; resetRefundForm()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition cursor-pointer">
+                            Cancel
+                        </button>
+                        <button @click="submitRefundRequest()" class="px-4 py-2 bg-[#1e3a8a] hover:bg-blue-800 text-white rounded-lg transition shadow-xs cursor-pointer">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="isSubmittingRefund">
+                <div class="flex flex-col items-center justify-center py-10">
+                    <svg class="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <p class="mt-3 text-sm text-slate-500">Submitting your request...</p>
+                </div>
+            </template>
+
+            <template x-if="refundSubmitted">
+                <div class="flex flex-col items-center justify-center py-10 text-center">
+                    <div class="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <i class="fas fa-check text-emerald-600 text-lg"></i>
+                    </div>
+                    <p class="mt-3 text-sm font-bold text-blue-900">Successful!</p>
+                    <p class="mt-1 text-xs text-slate-500">Your return/refund request has been submitted.</p>
+                    <button @click="closeRefundModal()" class="mt-5 px-4 py-2 bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer">
+                        Close
+                    </button>
+                </div>
+            </template>
+
         </div>
     </div>
 

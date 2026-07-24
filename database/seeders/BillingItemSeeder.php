@@ -27,11 +27,11 @@ class BillingItemSeeder extends Seeder
         BillingItem::create([
             'title' => 'Card Declining',
             'icon' => 'fa-exclamation-circle',
-            'problem' => 'Why am I seeing two identical charges on my bank statement?',
+            'problem' => 'Why is my card being declined when I try to make a payment?',
             'steps' => [
-                'Check if one of the charges is marked as Pending (this is a temporary authorization hold).',
-                'Wait 24 to 48 hours for your bank to clear and remove the duplicate temporary hold.',
-                'If both charges remain active after 2 days, contact support with your receipt.'
+                'Verify that your card details, billing address, and expiration date are entered correctly.',
+                'Check with your bank to ensure the transaction is not blocked for security reasons.',
+                'If the issue continues, contact support with the error message and payment attempt time.'
             ],
             'is_new' => false,
         ]);
