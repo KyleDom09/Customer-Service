@@ -171,7 +171,8 @@
                             @foreach($tickets as $ticket)
                             <tr data-status="{{ $ticket->status }}"
                                 data-search="{{ strtolower($ticket->customer_name . ' ' . $ticket->customer_email . ' ' . $ticket->subject . ' TK-' . str_pad($ticket->id, 4, '0', STR_PAD_LEFT) . ' ' . $ticket->category) }}"
-                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}')"
+                                data-id="{{ $ticket->id }}"
+                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}', {{ $ticket->id }})"
                                 class="ticket-row hover:bg-slate-50/50 transition-colors cursor-pointer">
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center gap-2.5">
@@ -265,6 +266,7 @@
             <div class="flex gap-2 mt-4">
                 <span id="drawer-priority" class="px-2 py-0.5 rounded text-[9px] font-bold border tracking-wider bg-red-50 text-red-600 border-red-200">CRITICAL</span>
                 <span id="drawer-status" class="px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-blue-50 text-blue-600 border border-blue-100">OPEN</span>
+                <span id="drawer-waiting-badge" class="hidden px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">⏳ Naghihintay ng reply ng admin</span>
             </div>
 
             <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Customer</p>
@@ -282,29 +284,25 @@
                 User is unable to login to their account. Error appears after entering credentials. Issue started after the recent system update.
             </p>
 
-            <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Timeline</p>
-            <div class="space-y-3 pl-2 border-l-2 border-slate-100 ml-1">
-                <div class="relative">
-                    <span class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-blue-500"></span>
-                    <div class="flex justify-between text-[10px] font-semibold text-slate-700">
-                        <span>Sarah Johnson</span> <span class="text-slate-400">10:23 AM</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 mt-0.5">"I can't login at all, getting error 401"</p>
-                </div>
-                <div class="relative">
-                    <span class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-purple-500"></span>
-                    <div class="flex justify-between text-[10px] font-semibold text-slate-700">
-                        <span>Mike Chen (Agent)</span> <span class="text-slate-400">10:35 AM</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 mt-0.5">"I'm looking into this, checking auth service logs"</p>
-                </div>
-                <div class="relative">
-                    <span class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-blue-500"></span>
-                    <div class="flex justify-between text-[10px] font-semibold text-slate-700">
-                        <span>Sarah Johnson</span> <span class="text-slate-400">11:02 AM</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 mt-0.5">"Still not working, please help!"</p>
-                </div>
+            <!-- LIVE CHAT / CONVERSATION -->
+            <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Conversation</p>
+            <div id="drawer-chat-messages" class="space-y-3 bg-slate-50/60 border border-slate-100 rounded-xl p-3 max-h-64 overflow-y-auto">
+                <!-- chat bubbles injected here by JS -->
+            </div>
+
+            <!-- Reply composer -->
+            <form id="chat-reply-form" onsubmit="sendChatMessage(event)" class="mt-3 flex items-end gap-2">
+                <textarea id="chat-input" rows="2" placeholder="I-type ang iyong reply..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
+                <button type="submit" class="bg-[#00CB92] text-white w-9 h-9 shrink-0 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center">
+                    ↩
+                </button>
+            </form>
+            <div class="flex items-center gap-1.5 mt-1.5">
+                <label class="text-[9px] text-slate-400 font-medium">Send as:</label>
+                <select id="chat-sender-role" class="text-[9px] border border-slate-200 rounded-md px-1.5 py-0.5 outline-none bg-white text-slate-600">
+                    <option value="admin">Admin / Agent</option>
+                    <option value="customer">Customer</option>
+                </select>
             </div>
 
             <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Assigned Agent</p>
@@ -330,7 +328,7 @@
         </div>
 
         <div class="space-y-2 border-t border-slate-100 pt-4 bg-white">
-            <button class="w-full bg-[#00CB92] text-white py-2 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center gap-1.5">
+            <button onclick="document.getElementById('chat-input').focus()" class="w-full bg-[#00CB92] text-white py-2 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center gap-1.5">
                 <span>↩</span> Reply
             </button>
             <button onclick="closeDrawer()" class="w-full border border-slate-200 text-slate-500 py-2 rounded-xl text-xs font-semibold hover:bg-slate-50 transition text-center">
@@ -496,6 +494,111 @@
 
     <!-- 8. APP SCRIPTS -->
     <script>
+        // ==============================
+        // CHAT / CONVERSATION SYSTEM
+        // ==============================
+        // NOTE: Ito ay client-side demo/prototype gamit ang localStorage bilang
+        // pansamantalang "storage". Para gumana ito nang totoo across users
+        // (customer sa isang device, admin sa iba), kailangan mo ng backend:
+        //   - isang `messages` table (ticket_id, sender_role, sender_name, body, created_at)
+        //   - route/controller para mag-store ng bagong message (POST)
+        //   - polling (setInterval fetch) o Laravel Echo/Pusher/WebSockets para
+        //     real-time yung pag-abot ng reply nang hindi kailangang mag-refresh.
+        // Hanggang doon, ito muna ang gumagana sa browser mo para makita agad
+        // ang buong UX flow (send -> waiting -> reply -> updated).
+
+        let currentTicketKey = null;
+
+        function chatStorageKey(ticketId) {
+            return 'ticket_chat_' + ticketId;
+        }
+
+        function loadChatMessages(ticketId) {
+            const raw = localStorage.getItem(chatStorageKey(ticketId));
+            if (raw) {
+                try { return JSON.parse(raw); } catch (e) { /* fallthrough */ }
+            }
+            // Default seed conversation (matches the old static timeline)
+            return [
+                { role: 'customer', name: 'Sarah Johnson', text: "I can't login at all, getting error 401", time: '10:23 AM' },
+                { role: 'admin', name: 'Mike Chen (Agent)', text: "I'm looking into this, checking auth service logs", time: '10:35 AM' },
+                { role: 'customer', name: 'Sarah Johnson', text: 'Still not working, please help!', time: '11:02 AM' }
+            ];
+        }
+
+        function saveChatMessages(ticketId, messages) {
+            localStorage.setItem(chatStorageKey(ticketId), JSON.stringify(messages));
+        }
+
+        function renderChatMessages(ticketId) {
+            const messages = loadChatMessages(ticketId);
+            const container = document.getElementById('drawer-chat-messages');
+            container.innerHTML = '';
+
+            messages.forEach(msg => {
+                const isAdmin = msg.role === 'admin';
+                const bubble = document.createElement('div');
+                bubble.className = 'flex ' + (isAdmin ? 'justify-end' : 'justify-start');
+                bubble.innerHTML = `
+                    <div class="max-w-[80%]">
+                        <div class="flex items-center gap-1.5 mb-0.5 ${isAdmin ? 'justify-end' : ''}">
+                            <span class="text-[9px] font-semibold ${isAdmin ? 'text-[#00875F]' : 'text-slate-600'}">${msg.name}</span>
+                            <span class="text-[9px] text-slate-400">${msg.time}</span>
+                        </div>
+                        <div class="text-[11px] px-3 py-2 rounded-2xl leading-snug ${isAdmin ? 'bg-[#00CB92] text-white rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-sm'}">
+                            ${escapeHtml(msg.text)}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(bubble);
+            });
+
+            container.scrollTop = container.scrollHeight;
+            updateWaitingBadge(messages);
+        }
+
+        function updateWaitingBadge(messages) {
+            const badge = document.getElementById('drawer-waiting-badge');
+            if (!messages.length) { badge.classList.add('hidden'); return; }
+            const lastMsg = messages[messages.length - 1];
+            // Show "waiting for admin" badge only if the last message was sent by the customer
+            if (lastMsg.role === 'customer') {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.innerText = str;
+            return div.innerHTML;
+        }
+
+        function sendChatMessage(event) {
+            event.preventDefault();
+            if (!currentTicketKey) return;
+
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const role = document.getElementById('chat-sender-role').value; // 'admin' or 'customer'
+            const name = role === 'admin' ? 'Mike Chen (Agent)' : document.getElementById('drawer-name').innerText;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const messages = loadChatMessages(currentTicketKey);
+            messages.push({ role, name, text, time });
+            saveChatMessages(currentTicketKey, messages);
+
+            input.value = '';
+            renderChatMessages(currentTicketKey);
+
+            // TODO (backend): dito mo ilalagay ang fetch()/axios POST papuntang
+            // route na gaya ng `/tickets/{id}/messages` para ma-save sa database
+            // at ma-broadcast sa ibang connected user (real admin/customer).
+        }
+
         // Filter Rows Function
         function filterStatus(status, element) {
             const tabs = document.querySelectorAll('.tab-btn');
@@ -521,7 +624,7 @@
         }
 
         // Ticket Detail Drawer Actions
-        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg) {
+        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId) {
             document.getElementById('drawer-id').innerText = 'Ticket ' + id;
             document.getElementById('drawer-name').innerText = name;
             document.getElementById('drawer-email').innerText = email;
@@ -545,6 +648,10 @@
             else if(status === 'PENDING') sBadge.className += 'bg-amber-50 text-amber-600 border border-amber-100';
             else if(status === 'RESOLVED') sBadge.className += 'bg-green-50 text-green-600 border border-green-100';
             else sBadge.className += 'bg-slate-100 text-slate-400 border border-slate-200';
+
+            // Load chat for this specific ticket
+            currentTicketKey = ticketId;
+            renderChatMessages(currentTicketKey);
 
             document.getElementById('ticket-drawer').classList.remove('translate-x-full');
         }
@@ -637,6 +744,19 @@
             const notifBtn = document.getElementById('notif-btn');
             if (!panel.classList.contains('hidden') && !panel.contains(event.target) && !notifBtn.contains(event.target)) {
                 panel.classList.add('hidden');
+            }
+        });
+
+        // Enter to send, Shift+Enter for newline
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput) {
+                chatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        document.getElementById('chat-reply-form').requestSubmit();
+                    }
+                });
             }
         });
     </script>
