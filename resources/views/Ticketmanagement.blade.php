@@ -171,7 +171,7 @@
                             @foreach($tickets as $ticket)
                             <tr data-status="{{ $ticket->status }}"
                                 data-search="{{ strtolower($ticket->customer_name . ' ' . $ticket->customer_email . ' ' . $ticket->subject . ' TK-' . str_pad($ticket->id, 4, '0', STR_PAD_LEFT) . ' ' . $ticket->category) }}"
-                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', {{ $ticket->id }}, '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}')"
+                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}')"
                                 class="ticket-row hover:bg-slate-50/50 transition-colors cursor-pointer">
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center gap-2.5">
@@ -283,7 +283,7 @@
             </p>
 
             <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Timeline</p>
-            <div id="drawer-timeline" class="space-y-3 pl-2 border-l-2 border-slate-100 ml-1">
+            <div class="space-y-3 pl-2 border-l-2 border-slate-100 ml-1">
                 <div class="relative">
                     <span class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-blue-500"></span>
                     <div class="flex justify-between text-[10px] font-semibold text-slate-700">
@@ -305,12 +305,6 @@
                     </div>
                     <p class="text-[11px] text-slate-500 mt-0.5">"Still not working, please help!"</p>
                 </div>
-            </div>
-
-            <!-- Waiting-for-admin indicator -->
-            <div id="drawer-waiting" class="hidden items-center gap-1.5 mt-2 text-[10px] text-slate-400">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <span>Waiting for admin response...</span>
             </div>
 
             <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Assigned Agent</p>
@@ -335,16 +329,8 @@
             </div>
         </div>
 
-        <!-- Reply box (hidden until "Reply" is clicked) -->
-        <div id="drawer-reply-box" class="hidden border-t border-slate-100 pt-3 mb-2">
-            <div class="flex items-end gap-2">
-                <textarea id="drawer-reply-input" rows="2" placeholder="Type your reply..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
-                <button onclick="sendCustomerReply()" class="bg-[#1E3A8A] text-white w-9 h-9 rounded-xl flex items-center justify-center text-xs shrink-0 hover:bg-[#16296b] transition">➤</button>
-            </div>
-        </div>
-
         <div class="space-y-2 border-t border-slate-100 pt-4 bg-white">
-            <button id="drawer-reply-toggle" onclick="toggleReplyBox()" class="w-full bg-[#00CB92] text-white py-2 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center gap-1.5">
+            <button class="w-full bg-[#00CB92] text-white py-2 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center gap-1.5">
                 <span>↩</span> Reply
             </button>
             <button onclick="closeDrawer()" class="w-full border border-slate-200 text-slate-500 py-2 rounded-xl text-xs font-semibold hover:bg-slate-50 transition text-center">
@@ -534,12 +520,8 @@
             });
         }
 
-        // ================= Ticket Detail Drawer =================
-        let currentTicketId = null;
-        let waitingTimeout = null;
-
-        function openDrawer(id, ticketId, name, email, initials, subject, category, priority, status, avatarBg) {
-            currentTicketId = ticketId;
+        // Ticket Detail Drawer Actions
+        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg) {
             document.getElementById('drawer-id').innerText = 'Ticket ' + id;
             document.getElementById('drawer-name').innerText = name;
             document.getElementById('drawer-email').innerText = email;
@@ -564,86 +546,11 @@
             else if(status === 'RESOLVED') sBadge.className += 'bg-green-50 text-green-600 border border-green-100';
             else sBadge.className += 'bg-slate-100 text-slate-400 border border-slate-200';
 
-            // reset reply UI state on open
-            document.getElementById('drawer-reply-box').classList.add('hidden');
-            document.getElementById('drawer-waiting').classList.add('hidden');
-            document.getElementById('drawer-waiting').classList.remove('flex');
-            if (waitingTimeout) clearTimeout(waitingTimeout);
-
             document.getElementById('ticket-drawer').classList.remove('translate-x-full');
         }
 
         function closeDrawer() {
             document.getElementById('ticket-drawer').classList.add('translate-x-full');
-        }
-
-        function toggleReplyBox() {
-            const box = document.getElementById('drawer-reply-box');
-            box.classList.toggle('hidden');
-            if (!box.classList.contains('hidden')) {
-                document.getElementById('drawer-reply-input').focus();
-            }
-        }
-
-        function formatNowTime() {
-            const now = new Date();
-            let h = now.getHours();
-            const m = now.getMinutes().toString().padStart(2, '0');
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12; if (h === 0) h = 12;
-            return `${h}:${m} ${ampm}`;
-        }
-
-        function appendTimelineEntry(author, dotColorClass, message) {
-            const timeline = document.getElementById('drawer-timeline');
-            const entry = document.createElement('div');
-            entry.className = 'relative';
-            entry.innerHTML = `
-                <span class="absolute -left-[13px] top-1 w-2 h-2 rounded-full ${dotColorClass}"></span>
-                <div class="flex justify-between text-[10px] font-semibold text-slate-700">
-                    <span>${author}</span> <span class="text-slate-400">${formatNowTime()}</span>
-                </div>
-                <p class="text-[11px] text-slate-500 mt-0.5">"${message}"</p>
-            `;
-            timeline.appendChild(entry);
-            timeline.scrollTop = timeline.scrollHeight;
-        }
-
-        // Sends the customer's reply, shows an auto-ack entry, then waits for the admin.
-        // Optionally persist this to the backend via fetch() to your Laravel route,
-        // e.g. POST /tickets/{id}/messages with { body: text }.
-        function sendCustomerReply() {
-            const input = document.getElementById('drawer-reply-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            appendTimelineEntry(document.getElementById('drawer-name').innerText, 'bg-blue-500', text);
-            input.value = '';
-            document.getElementById('drawer-reply-box').classList.add('hidden');
-
-            const waiting = document.getElementById('drawer-waiting');
-            waiting.classList.remove('hidden');
-            waiting.classList.add('flex');
-
-            if (waitingTimeout) clearTimeout(waitingTimeout);
-            waitingTimeout = setTimeout(() => {
-                appendTimelineEntry('System', 'bg-slate-300', "Thanks for your message. An agent will respond shortly.");
-            }, 600);
-
-            // TODO (backend): replace the block above with a real API call, e.g.
-            // fetch(`/customer-service/ticket-management/${currentTicketId}/messages`, {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            //   body: JSON.stringify({ body: text })
-            // });
-            // Then poll or use Laravel Echo/Pusher to detect the admin's real reply and
-            // call hideWaitingIndicator() + appendTimelineEntry('Agent Name', 'bg-purple-500', reply) when it arrives.
-        }
-
-        function hideWaitingIndicator() {
-            const waiting = document.getElementById('drawer-waiting');
-            waiting.classList.add('hidden');
-            waiting.classList.remove('flex');
         }
 
         // New Ticket Modal Actions
