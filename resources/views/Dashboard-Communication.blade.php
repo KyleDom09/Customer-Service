@@ -49,12 +49,28 @@
           <i data-lucide="bell" class="w-5 h-5"></i>
           <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#10B981] rounded-full"></span>
         </button>
-        <div class="flex items-center gap-2 cursor-pointer">
-          <img src="/assets/benju.jpg" alt="Benju Guzman" class="w-9 h-9 rounded-full object-cover">
-          <span class="hidden sm:block text-sm font-semibold text-slate-700">Benju Guzman</span>
-          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
-        </div>
-      </div>
+        <div class="relative" id="profileMenuWrapper">
+  <div class="flex items-center gap-2 cursor-pointer" id="profileMenuBtn">
+    <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-semibold text-sm">
+      {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+    </div>
+    <span class="hidden sm:block text-sm font-semibold text-slate-700">{{ auth()->user()->name }}</span>
+    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
+  </div>
+  <div id="profileMenuDropdown" class="hidden absolute right-0 mt-3 w-48 bg-white border border-slate-100 rounded-xl shadow-lg py-2 z-30">
+    <div class="px-4 py-2 border-b border-slate-100">
+      <p class="text-sm font-semibold text-slate-700 truncate">{{ auth()->user()->name }}</p>
+      <p class="text-xs text-slate-400 truncate">{{ auth()->user()->email }}</p>
+    </div>
+    <form method="POST" action="{{ route('logout') }}">
+      @csrf
+      <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        Log out
+      </button>
+    </form>
+  </div>
+</div>
     </header>
 
     <main class="p-4 sm:p-8">
@@ -258,6 +274,18 @@
 
 <script>
   lucide.createIcons();
+
+  const profileBtn = document.getElementById('profileMenuBtn');
+const profileDropdown = document.getElementById('profileMenuDropdown');
+profileBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  profileDropdown.classList.toggle('hidden');
+});
+document.addEventListener('click', (e) => {
+  if (!profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
+    profileDropdown.classList.add('hidden');
+  }
+});
 
   // ---- Mobile sidebar toggle ----
   const sidebar = document.getElementById('sidebar');

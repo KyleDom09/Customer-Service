@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\Agent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TicketController extends Controller
 {
@@ -55,7 +56,12 @@ class TicketController extends Controller
         // Default na status ng bagong ticket
         $validated['status'] = 'OPEN';
 
-        Ticket::create($validated);
+        $ticket = Ticket::create($validated);
+
+        // Auto-log this ticket creation into Communication History,
+        // so agents can see the full conversation trail without
+        // digging through the Ticket Management page separately.
+        $this->logCommunication($ticket, 'New ticket created: ' . $ticket->ticket_number . ' — ' . $ticket->subject);
 
         return redirect()->route('ticketmanagement')->with('success', 'Matagumpay na naidagdag ang bagong ticket!');
     }
@@ -74,9 +80,83 @@ class TicketController extends Controller
             'description'    => 'nullable|string',
         ]);
 
+        $previousStatus = $ticket->status;
+
         $ticket->update($validated);
 
+        // If the status actually changed, log it as a new Communication
+        // History entry so there's a visible trail of what happened.
+        if ($previousStatus !== $validated['status']) {
+            $this->logCommunication($ticket, 'Ticket ' . $ticket->ticket_number . ' status changed: ' . $previousStatus . ' → ' . $validated['status']);
+        }
+
         return redirect()->route('ticketmanagement')->with('success', 'Matagumpay na na-update ang ticket!');
+    }
+
+    // Helper: nag-iinsert ng bagong row sa communications table tuwing
+    // may bagong ticket na nagawa o nag-iba ang status ng isang ticket.
+    // Ginawa itong sarili niyang method para reusable sa store() at update(),
+    // at para consistent ang format sa CommunicationController.
+    //
+    // NOTE: the communications.type column is a strict ENUM('mail','phone','chat')
+    // and priority is ENUM('high','medium','low') — there's no "system"/"CRITICAL"
+    // option, so system-generated ticket events are logged as type 'mail' with
+    // the actual event description placed in 'subject' instead, and priority is
+    // lowercased + CRITICAL is downgraded to 'high' since it isn't a valid value here.
+    private function logCommunication(Ticket $ticket, string $note)
+    {
+        $agentName = $ticket->agent_id
+            ? (Agent::find($ticket->agent_id)->name ?? '')
+            : '';
+
+        // Map ticket status -> communication status so it fits the same
+        // filters already used on the Communication History page.
+        $statusMap = [
+            'OPEN'         => 'pending',
+            'PENDING'      => 'pending',
+            'IN PROGRESS'  => 'pending',
+            'RESOLVED'     => 'resolved',
+            'CLOSED'       => 'resolved',
+        ];
+        $commStatus = $statusMap[$ticket->status] ?? 'pending';
+
+        // communications.priority only allows high/medium/low (lowercase),
+        // so CRITICAL tickets get logged as 'high' — the closest valid fit.
+        $priorityMap = [
+            'CRITICAL' => 'high',
+            'HIGH'     => 'high',
+            'MEDIUM'   => 'medium',
+            'LOW'      => 'low',
+        ];
+        $commPriority = $priorityMap[$ticket->priority] ?? 'medium';
+
+        $respTime = 'Pending';
+        $resolvedAt = null;
+
+        if ($commStatus === 'resolved') {
+            $resolvedAt = now();
+            $minutes = $ticket->created_at->diffInMinutes($resolvedAt);
+            $respTime = $minutes < 60
+                ? $minutes . 'm'
+                : intdiv($minutes, 60) . 'h ' . ($minutes % 60) . 'm';
+        }
+
+        DB::table('communications')->insert([
+            'customer_name'  => $ticket->customer_name,
+            'customer_email' => $ticket->customer_email,
+            'date'           => now()->format('M d'),
+            'type'           => 'mail',
+            'subject'        => $note,
+            'staff'          => $agentName,
+            'agent_id'       => $ticket->agent_id,
+            'ticket_id'      => $ticket->id,
+            'status'         => $commStatus,
+            'priority'       => $commPriority,
+            'resp_time'      => $respTime,
+            'resolved_at'    => $resolvedAt,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
     }
 
     // Ito ang method para i-delete ang isang ticket

@@ -27,9 +27,6 @@
                 </svg>
                 <span class="sidebar-label font-medium whitespace-nowrap">Dashboard</span>
             </div>
-            @if (request()->is('customer-service/dashboard') || request()->is('customer-service/agents*') || request()->is('customer-service/logs*'))
-                <span class="sidebar-label w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
-            @endif
         </a>
 
         {{-- Ticket Management (link + separate chevron toggle) --}}
@@ -49,9 +46,6 @@
                     <span class="sidebar-label font-medium leading-tight whitespace-nowrap">Ticket Management</span>
                 </a>
                 <button id="ticketMgmtToggle" type="button" class="sidebar-label flex items-center gap-2 pr-4 py-3.5 pl-2 self-center shrink-0 rounded-lg hover:bg-[#152a63] transition">
-                    @if (request()->is('customer-service/ticket-management*'))
-                        <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
-                    @endif
                     <svg id="ticketMgmtChevron" class="w-4 h-4 text-blue-200 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                     </svg>
@@ -84,9 +78,6 @@
                 </svg>
                 <span class="sidebar-label font-medium whitespace-nowrap">Self-Service Portal</span>
             </div>
-            @if (request()->is('customer-service/self-service*'))
-                <span class="sidebar-label w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
-            @endif
         </a>
 
         {{-- Communication History (link + separate chevron toggle) --}}
@@ -106,9 +97,6 @@
                     <span class="sidebar-label font-medium leading-tight whitespace-nowrap">Communication History</span>
                 </a>
                 <button id="commHistoryToggle" type="button" class="sidebar-label flex items-center gap-2 pr-4 py-3.5 pl-2 self-center shrink-0 rounded-lg hover:bg-[#152a63] transition">
-                    @if (request()->is('customer-service/communication-history*') || request()->is('customer-service/dashboard-history*'))
-                        <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
-                    @endif
                     <svg id="commHistoryChevron" class="w-4 h-4 text-blue-200 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                     </svg>
@@ -141,9 +129,6 @@
                 </svg>
                 <span class="sidebar-label font-medium whitespace-nowrap">SLA Tracking</span>
             </div>
-            @if (request()->is('customer-service/sla-tracking*'))
-                <span class="sidebar-label w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
-            @endif
         </a>
 
     </nav>
