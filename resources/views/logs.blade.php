@@ -131,11 +131,12 @@
                     @endphp
 
                     @foreach ($tabs as $key => $label)
-                        <a href="{{ url('/customer-service/logs/' . $key) }}"
-                        class="px-4 py-1.5 rounded-full text-sm font-medium transition
-                                {{ $filter === $key ? 'bg-blue-50 text-navy shadow-sm' : 'text-gray-500 hover:text-navy' }}">
+                        <button type="button" onclick="selectLogTab('{{ $key }}')"
+                            class="log-tab px-4 py-1.5 rounded-full text-sm font-medium transition
+                                {{ $filter === $key ? 'bg-blue-50 text-navy shadow-sm' : 'text-gray-500 hover:text-navy' }}"
+                            data-tab="{{ $key }}">
                             {{ $label }}
-                        </a>
+                        </button>
                     @endforeach
                 </div>
 
@@ -458,6 +459,116 @@
         window.print();
     }
 
+    function selectLogTab(filter) {
+        currentLogFilter = filter;
+        document.querySelectorAll('.log-tab').forEach(btn => {
+            if (btn.dataset.tab === filter) {
+                btn.classList.add('bg-blue-50', 'text-navy', 'shadow-sm');
+                btn.classList.remove('text-gray-500', 'hover:text-navy');
+            } else {
+                btn.classList.remove('bg-blue-50', 'text-navy', 'shadow-sm');
+                btn.classList.add('text-gray-500', 'hover:text-navy');
+            }
+        });
+
+        const filterLabels = {
+            'all': 'logs',
+            'escalations': 'escalations',
+            'status-updates': 'status updates',
+            'sla-alerts': 'SLA alerts',
+            'user-creation': 'user creation',
+        };
+
+        const searchInput = document.getElementById('logSearch');
+        if (searchInput) {
+            searchInput.placeholder = `Search ${filterLabels[filter] || 'logs'}...`;
+        }
+
+        logCurrentPage = 1;
+        renderLogTable();
+    }
+
+    function getFilteredLogs() {
+        return allLogs.filter(log => currentLogFilter === 'all' || log.type === currentLogFilter);
+    }
+
+    function createLogRow(log) {
+        const tr = document.createElement('tr');
+        tr.className = 'log-row border-b border-gray-50 hover:bg-gray-50/50';
+        tr.dataset.type = log.type;
+        tr.dataset.desc = log.desc.toLowerCase();
+        tr.dataset.target = log.target.toLowerCase();
+        tr.dataset.by = log.by.toLowerCase();
+
+        const escape = value => String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const timeTd = document.createElement('td');
+        timeTd.className = 'py-4 text-gray-500';
+        timeTd.textContent = log.time;
+        tr.appendChild(timeTd);
+
+        const eventTd = document.createElement('td');
+        eventTd.className = 'py-4';
+        const badge = document.createElement('span');
+        badge.className = `px-2.5 py-1 rounded-md text-xs font-semibold ${eventColorMap[log.event] || 'bg-gray-50 text-gray-500'}`;
+        badge.textContent = log.event;
+        eventTd.appendChild(badge);
+        tr.appendChild(eventTd);
+
+        const targetTd = document.createElement('td');
+        targetTd.className = 'py-4';
+        targetTd.innerHTML = `<a href="javascript:void(0)" onclick="openLogModal('${escape(log.time)}', '${escape(log.event)}', '${escape(log.target)}', '${escape(log.desc)}', '${escape(log.by)}', '${escape(log.severity)}')" class="text-navy font-semibold hover:underline">${escape(log.target)}</a>`;
+        tr.appendChild(targetTd);
+
+        const descTd = document.createElement('td');
+        descTd.className = 'py-4 text-gray-600';
+        descTd.textContent = log.desc;
+        tr.appendChild(descTd);
+
+        const byTd = document.createElement('td');
+        byTd.className = 'py-4 text-navy';
+        byTd.textContent = log.by;
+        tr.appendChild(byTd);
+
+        const severityTd = document.createElement('td');
+        severityTd.className = 'py-4';
+        const sevBadge = document.createElement('span');
+        sevBadge.className = `px-2.5 py-1 rounded-md text-xs font-bold ${severityColorMap[log.severity] || 'bg-gray-400 text-white'}`;
+        sevBadge.textContent = log.severity;
+        severityTd.appendChild(sevBadge);
+        tr.appendChild(severityTd);
+
+        const actionTd = document.createElement('td');
+        actionTd.className = 'py-4';
+        actionTd.innerHTML = `
+            <button onclick="event.stopPropagation(); openEditLogModal(${log.id}, '${escape(log.target)}', '${escape(log.type)}', '${escape(log.event)}', '${escape(log.desc)}', '${escape(log.by)}', '${escape(log.severity)}')" class="text-gray-400 hover:text-navy transition p-1.5 rounded-lg hover:bg-gray-100">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+            </button>
+        `;
+        tr.appendChild(actionTd);
+
+        return tr;
+    }
+
+    function renderLogTable() {
+        const logs = getFilteredLogs();
+        const tbody = document.getElementById('logTableBody');
+        tbody.innerHTML = '';
+
+        logs.forEach(log => {
+            tbody.appendChild(createLogRow(log));
+        });
+
+        filterLogs();
+    }
+
     function filterLogs() {
         const query = document.getElementById('logSearch').value.toLowerCase();
         const rows = document.querySelectorAll('.log-row');
@@ -507,8 +618,10 @@
             pageNumbersDiv.appendChild(btn);
         }
 
-        document.getElementById('logPrevBtn').disabled = logCurrentPage === 1;
-        document.getElementById('logNextBtn').disabled = logCurrentPage === totalPages;
+        const prevBtn = document.getElementById('logPrevBtn');
+        const nextBtn = document.getElementById('logNextBtn');
+        if (prevBtn) prevBtn.disabled = logCurrentPage === 1;
+        if (nextBtn) nextBtn.disabled = logCurrentPage === totalPages;
     }
 
     function changeLogPage(direction) {
@@ -526,6 +639,9 @@
         'Resolution': 'bg-green-50 text-green-500',
         'User Creation': 'bg-green-50 text-green-500',
     };
+
+    let currentLogFilter = '{{ $filter }}';
+    const allLogs = @json($allLogs);
 
     const severityColorMap = {
         'CRITICAL': 'bg-red-500 text-white',
@@ -678,7 +794,7 @@
         }
     });
 
-    document.addEventListener('DOMContentLoaded', renderLogPagination);
+    document.addEventListener('DOMContentLoaded', renderLogTable);
 </script>
 @endpush
 

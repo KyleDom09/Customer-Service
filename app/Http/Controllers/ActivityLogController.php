@@ -16,7 +16,20 @@ class ActivityLogController extends Controller
             $query->where('type', $filter);
         }
 
-        $logs = $query->get()->map(function ($log) {
+        $filteredLogs = $query->get()->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'type' => $log->type,
+                'event' => $log->event,
+                'time' => $log->logged_at->diffForHumans(),
+                'target' => $log->target_id,
+                'desc' => $log->description,
+                'by' => $log->performed_by,
+                'severity' => $log->severity,
+            ];
+        })->toArray();
+
+        $allLogs = ActivityLog::orderByDesc('logged_at')->get()->map(function ($log) {
             return [
                 'id' => $log->id,
                 'type' => $log->type,
@@ -44,7 +57,8 @@ class ActivityLogController extends Controller
 
         return view('logs', [
             'filter' => $filter,
-            'filteredLogs' => $logs,
+            'filteredLogs' => $filteredLogs,
+            'allLogs' => $allLogs,
             'totalLogsRecorded' => $totalLogsRecorded,
             'criticalEscalations' => $criticalEscalations,
             'automatedSystemActions' => $automatedSystemActions,

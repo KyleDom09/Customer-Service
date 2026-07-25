@@ -144,29 +144,50 @@
 </header>
 
 <script>
-
     function toggleNotifications() {
-        document.getElementById('notifMenu').classList.toggle('hidden');
+        const notifMenu = document.getElementById('notifMenu');
+        if (notifMenu) {
+            notifMenu.classList.toggle('hidden');
+        }
     }
 
     function markAllRead() {
+        const notifList = document.getElementById('notifList');
+        const notifBadge = document.getElementById('notifBadge');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        if (!csrfToken) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('CSRF token is missing.', 'error');
+            }
+            return;
+        }
+
         fetch('/customer-service/notifications/mark-read', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-CSRF-TOKEN': csrfToken,
             },
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('notifList').innerHTML = '<p class="px-4 py-6 text-center text-gray-400 text-sm">No new notifications.</p>';
-                document.getElementById('notifBadge').classList.add('hidden');
-                showToast('All notifications marked as read.', 'info');
+                if (notifList) {
+                    notifList.innerHTML = '<p class="px-4 py-6 text-center text-gray-400 text-sm">No new notifications.</p>';
+                }
+                if (notifBadge) {
+                    notifBadge.classList.add('hidden');
+                }
+                if (typeof window.showToast === 'function') {
+                    window.showToast('All notifications marked as read.', 'info');
+                }
             }
         })
         .catch(() => {
-            showToast('Something went wrong.', 'error');
+            if (typeof window.showToast === 'function') {
+                window.showToast('Something went wrong.', 'error');
+            }
         });
     }
 
@@ -184,8 +205,14 @@
         }
     });
 
-    document.getElementById('profileMenuBtn')?.addEventListener('click', function (event) {
-        event.stopPropagation();
-        document.getElementById('profileMenuDropdown').classList.toggle('hidden');
-    });
+    const profileMenuBtn = document.getElementById('profileMenuBtn');
+    if (profileMenuBtn) {
+        profileMenuBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            const profileMenu = document.getElementById('profileMenuDropdown');
+            if (profileMenu) {
+                profileMenu.classList.toggle('hidden');
+            }
+        });
+    }
 </script>

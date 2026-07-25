@@ -238,17 +238,56 @@
     // Dynamic datasets per period, galing sa database (Ticket model)
     const dashboardData = @json($dashboardPeriods);
 
-    let ticketVolumeChart;
+    let ticketVolumeChart = null;
 
-    window.addEventListener('load', function() {
-        ticketVolumeChart = new Chart(document.getElementById('ticketVolumeChart'), {
+    function updateDashboardStats(period) {
+        const data = dashboardData?.[period];
+        if (!data) return;
+
+        const statOpenTickets = document.getElementById('statOpenTickets');
+        const statPendingTickets = document.getElementById('statPendingTickets');
+        const statResolvedTickets = document.getElementById('statResolvedTickets');
+        const labelOpenTickets = document.getElementById('labelOpenTickets');
+        const labelPendingTickets = document.getElementById('labelPendingTickets');
+        const labelResolvedTickets = document.getElementById('labelResolvedTickets');
+        const headingResolvedTickets = document.getElementById('headingResolvedTickets');
+
+        if (statOpenTickets) statOpenTickets.textContent = data.stats?.open ?? 0;
+        if (statPendingTickets) statPendingTickets.textContent = data.stats?.pending ?? 0;
+        if (statResolvedTickets) statResolvedTickets.textContent = data.stats?.resolved ?? 0;
+
+        if (labelOpenTickets) labelOpenTickets.textContent = data.cardLabels?.open ?? '';
+        if (labelPendingTickets) labelPendingTickets.textContent = data.cardLabels?.pending ?? '';
+        if (labelResolvedTickets) labelResolvedTickets.textContent = data.cardLabels?.resolved ?? '';
+        if (headingResolvedTickets) headingResolvedTickets.textContent = data.cardLabels?.resolvedHeading ?? '';
+
+        if (!ticketVolumeChart) return;
+
+        ticketVolumeChart.data.labels = data.labels ?? [];
+        ticketVolumeChart.data.datasets[0].data = data.received ?? [];
+        ticketVolumeChart.data.datasets[1].data = data.resolvedLine ?? [];
+        ticketVolumeChart.update();
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const ticketCanvas = document.getElementById('ticketVolumeChart');
+        const csatCanvas = document.getElementById('csatDoughnutChart');
+
+        if (!window.Chart || !ticketCanvas || !csatCanvas) {
+            return;
+        }
+
+        const initialData = dashboardData?.Today ?? Object.values(dashboardData)[0] ?? null;
+        if (!initialData) return;
+
+        ticketVolumeChart = new Chart(ticketCanvas, {
             type: 'line',
             data: {
-                labels: dashboardData['Today'].labels,
+                labels: initialData.labels ?? [],
                 datasets: [
                     {
                         label: 'Tickets Received',
-                        data: dashboardData['Today'].received,
+                        data: initialData.received ?? [],
                         borderColor: '#1E3A8A',
                         backgroundColor: 'rgba(30, 58, 138, 0.08)',
                         tension: 0.4,
@@ -260,7 +299,7 @@
                     },
                     {
                         label: 'Tickets Resolved',
-                        data: dashboardData['Today'].resolvedLine,
+                        data: initialData.resolvedLine ?? [],
                         borderColor: '#22c55e',
                         backgroundColor: 'rgba(34, 197, 94, 0.08)',
                         tension: 0.4,
@@ -283,8 +322,7 @@
             }
         });
 
-        // CSAT Doughnut Chart
-        new Chart(document.getElementById('csatDoughnutChart'), {
+        new Chart(csatCanvas, {
             type: 'doughnut',
             data: {
                 labels: ['Excellent', 'Good', 'Fair'],
@@ -301,25 +339,5 @@
             }
         });
     });
-
-    // Function na tinatawag ng navbar dropdown para i-update lahat
-    function updateDashboardStats(period) {
-        const data = dashboardData[period];
-        if (!data) return;
-
-        document.getElementById('statOpenTickets').textContent = data.stats.open;
-        document.getElementById('statPendingTickets').textContent = data.stats.pending;
-        document.getElementById('statResolvedTickets').textContent = data.stats.resolved;
-
-        document.getElementById('labelOpenTickets').textContent = data.cardLabels.open;
-        document.getElementById('labelPendingTickets').textContent = data.cardLabels.pending;
-        document.getElementById('labelResolvedTickets').textContent = data.cardLabels.resolved;
-        document.getElementById('headingResolvedTickets').textContent = data.cardLabels.resolvedHeading;
-
-        ticketVolumeChart.data.labels = data.labels;
-        ticketVolumeChart.data.datasets[0].data = data.received;
-        ticketVolumeChart.data.datasets[1].data = data.resolvedLine;
-        ticketVolumeChart.update();
-    }
 </script>
 @endpush
