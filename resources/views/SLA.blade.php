@@ -97,6 +97,7 @@
         
         currentMonthWord: '',
         daysInMonth: [],
+        allMinutes: Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')),
         monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         
         graphPoints: [65, 50, 60, 68, 50, 25, 20, 35],
@@ -118,13 +119,16 @@
             { label: 'Last 30', b: [], r: ['#8812'] }
         ],
         hoveredDayIndex: null,
+        hoveredBarKey: null,
         
         backendRules: {{ json_encode($rules ?? []) }},
         rulesList: [],
         
         newRuleName: '',
-        newRuleResponse: '',
-        newRuleResolution: '',
+        newRuleResponseValue: '',
+        newRuleResponseUnit: 'm',
+        newRuleResolutionValue: '',
+        newRuleResolutionUnit: 'h',
         
         saveRulesLocally() {
             localStorage.setItem('sla_rules_storage', JSON.stringify(this.rulesList));
@@ -150,7 +154,23 @@
             }));
         },
 
+        saveNotificationsLocally() {
+            localStorage.setItem('sla_notifications_storage', JSON.stringify({
+                notificationsList: this.notificationsList,
+                unreadNotifications: this.unreadNotifications
+            }));
+        },
+
         init() {
+            let storedNotifications = localStorage.getItem('sla_notifications_storage');
+            if (storedNotifications) {
+                const savedNotif = JSON.parse(storedNotifications);
+                this.notificationsList = savedNotif.notificationsList;
+                this.unreadNotifications = savedNotif.unreadNotifications;
+            } else {
+                this.saveNotificationsLocally();
+            }
+
             if (this.backendRules && this.backendRules.length > 0) {
                 this.rulesList = this.backendRules;
                 this.saveRulesLocally();
@@ -352,7 +372,8 @@
         },
 
         graphPathLine() { 
-            return 'M 0 ' + this.graphPoints[0] + ' Q 15 ' + this.graphPoints[1] + ' 25 ' + this.graphPoints[2] + ' T 45 ' + this.graphPoints[3] + ' T 65 ' + this.graphPoints[4] + ' T 80 ' + this.graphPoints[5] + ' T 90 ' + this.graphPoints[6] + ' T 100 ' + this.graphPoints[7]; 
+            const step = 100 / (this.graphPoints.length - 1);
+            return this.graphPoints.map((v, i) => (i === 0 ? 'M' : 'L') + ' ' + (i * step) + ' ' + v).join(' ');
         },
         
         graphPathFill() { return this.graphPathLine() + ' L 100 100 L 0 100 Z'; },
@@ -363,8 +384,8 @@
             let ruleData = {
                 id: Date.now(),
                 name: this.newRuleName,
-                response: this.newRuleResponse || '< 30m',
-                resolution: this.newRuleResolution || '< 4h',
+                response: this.newRuleResponseValue ? ('< ' + this.newRuleResponseValue + this.newRuleResponseUnit) : '< 30m',
+                resolution: this.newRuleResolutionValue ? ('< ' + this.newRuleResolutionValue + this.newRuleResolutionUnit) : '< 4h',
                 active: true
             };
 
@@ -379,12 +400,15 @@
                 time: 'Just now',
                 read: false
             });
+            this.saveNotificationsLocally();
             
             setTimeout(() => this.notifyPulse = false, 1500);
 
             this.newRuleName = '';
-            this.newRuleResponse = '';
-            this.newRuleResolution = '';
+            this.newRuleResponseValue = '';
+            this.newRuleResponseUnit = 'm';
+            this.newRuleResolutionValue = '';
+            this.newRuleResolutionUnit = 'h';
             this.ruleEditorOpen = false;
 
             try {
@@ -451,6 +475,17 @@
             const newData = this.generateDataForDate(this.selectedYear, this.selectedMonth, this.selectedDate);
             this.animateGraphChange(newData);
 
+            this.unreadNotifications++;
+            this.notifyPulse = true;
+            this.notificationsList.unshift({
+                id: Date.now(),
+                text: 'SLA baseline date/time updated to ' + this.currentMonthWord + ' ' + this.selectedDate + ', ' + this.selectedHour + ':' + this.selectedMinute + ' ' + this.selectedAmpm + '.',
+                time: 'Just now',
+                read: false
+            });
+            this.saveNotificationsLocally();
+            setTimeout(() => this.notifyPulse = false, 1500);
+
             this.datePickerOpen = false;
         },
 
@@ -463,6 +498,7 @@
         markNotificationsRead() {
             this.unreadNotifications = 0;
             this.notificationsList.forEach(n => n.read = true);
+            this.saveNotificationsLocally();
         }
       }">
 
@@ -490,7 +526,7 @@
                 <div class="flex items-center gap-4">
                     <button class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-95 text-slate-500 text-xs flex items-center justify-center font-bold border border-slate-200/50 cursor-pointer transition-all shadow-md">?</button>
                     
-                    <div class="relative cursor-pointer" @click="notificationsOpen = !notificationsOpen; markNotificationsRead()" @click.away="notificationsOpen = false">
+                    <div class="relative cursor-pointer" @click="notificationsOpen = !notificationsOpen" @click.away="notificationsOpen = false">
                         <div class="relative hover:scale-110 active:scale-95 transition-transform" :class="notifyPulse ? 'animate-ring' : ''">
                             <svg class="w-6 h-6 text-slate-500 hover:text-blue-600 transition-colors drop-shadow-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a3 3 0 11-5.714 0M3.124 7.5A8.969 8.969 0 015.292 3m13.416 0a8.969 8.969 0 012.168 4.5" />
@@ -510,7 +546,7 @@
                                     </div>
                                 </template>
                             </div>
-                            <button class="w-full py-2.5 text-center text-[10px] font-bold text-blue-600 hover:bg-blue-50 transition cursor-pointer shadow-inner">View All History</button>
+                            <button @click="markNotificationsRead()" class="w-full py-2.5 text-center text-[10px] font-bold text-blue-600 hover:bg-blue-50 transition cursor-pointer shadow-inner">Mark All as Read</button>
                         </div>
                     </div>
 
@@ -531,12 +567,22 @@
                         </div>
                         
                         <div x-show="profileOpen" x-transition class="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50">
-                            <button class="w-full text-left px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 font-medium transition cursor-pointer flex items-center gap-2 drop-shadow-sm">⚙️ Account Settings</button>
-                            <button class="w-full text-left px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 font-medium transition cursor-pointer flex items-center gap-2 drop-shadow-sm">🌙 Dark Mode</button>
+                            <button class="w-full text-left px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 font-medium transition cursor-pointer flex items-center gap-2.5">
+                                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.992l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.02-.397-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a7.688 7.688 0 010-.255c.007-.378-.138-.75-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Account Settings
+                            </button>
                             <div class="border-t border-slate-100"></div>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="w-full text-left px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 font-bold transition cursor-pointer flex items-center gap-2 drop-shadow-sm">🚪 Sign Out</button>
+                                <button type="submit" class="w-full text-left px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 font-bold transition cursor-pointer flex items-center gap-2.5">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0110.5 3h6a2.25 2.25 0 012.25 2.25v13.5A2.25 2.25 0 0116.5 21h-6a2.25 2.25 0 01-2.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                                    </svg>
+                                    Sign Out
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -691,13 +737,16 @@
                         </div>
                     </div>
 
-                    <div class="col-span-7 bg-white border border-slate-200 rounded-2xl p-5 shadow-lg flex flex-col justify-between overflow-hidden relative group transition-transform hover:-translate-y-0.5">
+                    <div class="col-span-7 bg-white border border-slate-200 rounded-2xl p-5 shadow-lg flex flex-col justify-between overflow-visible relative group transition-transform hover:-translate-y-0.5">
                         <div class="flex justify-between items-start mb-3">
                             <div>
                                 <h3 class="text-xs font-black text-slate-800 tracking-wide uppercase drop-shadow-sm">Attainment By Ticket Priority</h3>
                             </div>
-                            <button @click="datePickerOpen = true" class="px-3 py-1.5 bg-[#10b981] hover:bg-[#0e9f6e] text-white rounded-lg text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-[0_4px_10px_rgba(16,185,129,0.4)] transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer relative z-30">
-                                DATE PICKER <span class="text-[10px]">🗓</span>
+                            <button @click="datePickerOpen = true" class="px-3 py-1.5 bg-[#10b981] hover:bg-[#0e9f6e] text-white rounded-lg text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_4px_10px_rgba(16,185,129,0.4)] transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer relative z-30">
+                                DATE PICKER
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
                             </button>
                         </div>
                         
@@ -705,32 +754,55 @@
                             <div class="absolute left-0 top-0 bottom-0 text-[10px] font-extrabold text-slate-400 flex flex-col justify-between text-right pointer-events-none h-full pb-8 drop-shadow-sm">
                                 <span>100</span><span>80</span><span>60</span><span>40</span><span>20</span><span>0</span>
                             </div>
+
+                            <div x-show="hoveredBarKey" x-transition.opacity.duration.200ms
+                                 class="pointer-events-none absolute top-0 -translate-x-1/2 w-[190px] bg-slate-900/95 backdrop-blur-md border border-slate-700 shadow-2xl rounded-2xl p-3 z-50"
+                                 :style="`left: ${hoveredBarKey === 'high' ? '16.6%' : hoveredBarKey === 'medium' ? '50%' : '83.3%'}`"
+                                 style="display: none;">
+                                <h4 class="text-[11px] font-black uppercase tracking-wider border-b border-slate-700 pb-1.5 mb-2 drop-shadow-sm"
+                                    :class="hoveredBarKey === 'high' ? 'text-emerald-400' : (hoveredBarKey === 'medium' ? 'text-amber-400' : 'text-rose-400')"
+                                    x-text="(hoveredBarKey === 'high' ? 'High' : (hoveredBarKey === 'medium' ? 'Medium' : 'Low')) + ' Priority Metrics'"></h4>
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="flex justify-between items-center gap-3">
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Response Attainment</span>
+                                        <span class="text-[11px] font-black text-white" x-text="hoveredBarKey ? Math.round(barHeights[hoveredBarKey][0]) + '%' : ''"></span>
+                                    </div>
+                                    <div class="flex justify-between items-center gap-3">
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Resolution Attainment</span>
+                                        <span class="text-[11px] font-black text-white" x-text="hoveredBarKey ? Math.round(barHeights[hoveredBarKey][1]) + '%' : ''"></span>
+                                    </div>
+                                    <div class="flex justify-between items-center gap-3">
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Overall Compliance</span>
+                                        <span class="text-[11px] font-black text-white" x-text="hoveredBarKey ? Math.round(barHeights[hoveredBarKey][2]) + '%' : ''"></span>
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <div class="flex flex-col items-center justify-end h-full w-24 pb-6">
+                            <div class="flex flex-col items-center justify-end h-full w-24 pb-6 group" @mouseenter="hoveredBarKey = 'high'" @mouseleave="hoveredBarKey = null">
                                 <div class="flex gap-1.5 items-end h-full w-full justify-center border-b border-slate-200 relative z-10">
-                                    <div class="w-3 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-400 hover:to-blue-200 cursor-pointer shadow-[0_-3px_8px_rgba(59,130,246,0.4)] border-t border-white/40" :style="`height: ${barHeights.high[0]}%`"></div>
-                                    <div class="w-3 bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-600 hover:to-blue-400 cursor-pointer shadow-[0_-3px_12px_rgba(37,99,235,0.6)] border-t border-white/40" :style="`height: ${barHeights.high[1]}%`"></div>
-                                    <div class="w-3 bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-300 hover:to-blue-100 cursor-pointer shadow-[0_-3px_6px_rgba(96,165,250,0.4)] border-t border-white/40" :style="`height: ${barHeights.high[2]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-400 group-hover:to-blue-200 cursor-pointer shadow-[0_-3px_8px_rgba(59,130,246,0.4)] border-t border-white/40" :style="`height: ${barHeights.high[0]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-600 group-hover:to-blue-400 cursor-pointer shadow-[0_-3px_12px_rgba(37,99,235,0.6)] border-t border-white/40" :style="`height: ${barHeights.high[1]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-300 group-hover:to-blue-100 cursor-pointer shadow-[0_-3px_6px_rgba(96,165,250,0.4)] border-t border-white/40" :style="`height: ${barHeights.high[2]}%`"></div>
                                 </div>
                                 <span class="text-[11px] font-extrabold text-slate-700 mt-2 tracking-wider drop-shadow-sm">HIGH</span>
                                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1 shadow-[0_0_5px_rgba(52,211,153,0.8)]"></span>
                             </div>
 
-                            <div class="flex flex-col items-center justify-end h-full w-24 pb-6">
+                            <div class="flex flex-col items-center justify-end h-full w-24 pb-6 group" @mouseenter="hoveredBarKey = 'medium'" @mouseleave="hoveredBarKey = null">
                                 <div class="flex gap-1.5 items-end h-full w-full justify-center border-b border-slate-200 relative z-10">
-                                    <div class="w-3 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-400 hover:to-blue-200 cursor-pointer shadow-[0_-3px_8px_rgba(59,130,246,0.4)] border-t border-white/40" :style="`height: ${barHeights.medium[0]}%`"></div>
-                                    <div class="w-3 bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-600 hover:to-blue-400 cursor-pointer shadow-[0_-3px_12px_rgba(37,99,235,0.6)] border-t border-white/40" :style="`height: ${barHeights.medium[1]}%`"></div>
-                                    <div class="w-3 bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-300 hover:to-blue-100 cursor-pointer shadow-[0_-3px_6px_rgba(96,165,250,0.4)] border-t border-white/40" :style="`height: ${barHeights.medium[2]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-400 group-hover:to-blue-200 cursor-pointer shadow-[0_-3px_8px_rgba(59,130,246,0.4)] border-t border-white/40" :style="`height: ${barHeights.medium[0]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-600 group-hover:to-blue-400 cursor-pointer shadow-[0_-3px_12px_rgba(37,99,235,0.6)] border-t border-white/40" :style="`height: ${barHeights.medium[1]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-300 group-hover:to-blue-100 cursor-pointer shadow-[0_-3px_6px_rgba(96,165,250,0.4)] border-t border-white/40" :style="`height: ${barHeights.medium[2]}%`"></div>
                                 </div>
                                 <span class="text-[11px] font-extrabold text-slate-700 mt-2 tracking-wider drop-shadow-sm">MEDIUM</span>
                                 <span class="w-2.5 h-2.5 rounded-full bg-amber-400 mt-1 shadow-[0_0_5px_rgba(251,191,36,0.8)]"></span>
                             </div>
 
-                            <div class="flex flex-col items-center justify-end h-full w-24 pb-6">
+                            <div class="flex flex-col items-center justify-end h-full w-24 pb-6 group" @mouseenter="hoveredBarKey = 'low'" @mouseleave="hoveredBarKey = null">
                                 <div class="flex gap-1.5 items-end h-full w-full justify-center border-b border-slate-200 relative z-10">
-                                    <div class="w-3 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-400 hover:to-blue-200 cursor-pointer shadow-[0_-3px_8px_rgba(59,130,246,0.4)] border-t border-white/40" :style="`height: ${barHeights.low[0]}%`"></div>
-                                    <div class="w-3 bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-600 hover:to-blue-400 cursor-pointer shadow-[0_-3px_12px_rgba(37,99,235,0.6)] border-t border-white/40" :style="`height: ${barHeights.low[1]}%`"></div>
-                                    <div class="w-3 bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-sm transition-all duration-500 ease-in-out hover:from-blue-300 hover:to-blue-100 cursor-pointer shadow-[0_-3px_6px_rgba(96,165,250,0.4)] border-t border-white/40" :style="`height: ${barHeights.low[2]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-400 group-hover:to-blue-200 cursor-pointer shadow-[0_-3px_8px_rgba(59,130,246,0.4)] border-t border-white/40" :style="`height: ${barHeights.low[0]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-600 group-hover:to-blue-400 cursor-pointer shadow-[0_-3px_12px_rgba(37,99,235,0.6)] border-t border-white/40" :style="`height: ${barHeights.low[1]}%`"></div>
+                                    <div class="w-3 bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-sm transition-all duration-500 ease-in-out group-hover:from-blue-300 group-hover:to-blue-100 cursor-pointer shadow-[0_-3px_6px_rgba(96,165,250,0.4)] border-t border-white/40" :style="`height: ${barHeights.low[2]}%`"></div>
                                 </div>
                                 <span class="text-[11px] font-extrabold text-slate-700 mt-2 tracking-wider drop-shadow-sm">LOW</span>
                                 <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mt-1 shadow-[0_0_5px_rgba(244,63,94,0.8)]"></span>
@@ -888,7 +960,10 @@
                     <div>
                         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-3">
                             <button @click="rulesConfigOpen = false" class="text-slate-800 font-black text-xs flex items-center gap-1.5 hover:opacity-80 uppercase tracking-wider cursor-pointer active:scale-95 transition-all drop-shadow-sm">
-                                <span>◀</span> SLA Rules Config
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                </svg>
+                                SLA Rules Config
                             </button>
                             <button @click="ruleEditorOpen = !ruleEditorOpen" class="text-white text-xs font-black bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-xl border border-blue-600 transition-all active:scale-95 cursor-pointer shadow-[0_4px_10px_rgba(37,99,235,0.4)] drop-shadow-sm" x-text="ruleEditorOpen ? 'Hide Form' : '+ Add Rule Option'"></button>
                         </div>
@@ -901,11 +976,23 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="text-[10px] font-extrabold text-slate-500 block mb-1 uppercase tracking-wider drop-shadow-sm">Response Target</label>
-                                    <input type="text" x-model="newRuleResponse" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-sm" placeholder="< 30m">
+                                    <div class="flex gap-1.5">
+                                        <input type="number" min="0" x-model="newRuleResponseValue" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-sm" placeholder="30">
+                                        <select x-model="newRuleResponseUnit" class="px-2 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-sm cursor-pointer">
+                                            <option value="m">Minutes</option>
+                                            <option value="h">Hours</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-extrabold text-slate-500 block mb-1 uppercase tracking-wider drop-shadow-sm">Resolution Target</label>
-                                    <input type="text" x-model="newRuleResolution" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-sm" placeholder="< 4h">
+                                    <div class="flex gap-1.5">
+                                        <input type="number" min="0" x-model="newRuleResolutionValue" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-sm" placeholder="4">
+                                        <select x-model="newRuleResolutionUnit" class="px-2 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-sm cursor-pointer">
+                                            <option value="h">Hours</option>
+                                            <option value="m">Minutes</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                             <button @click="addNewRule" class="w-full py-2.5 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-lg text-[11px] uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-[0_4px_10px_rgba(5,150,105,0.4)] drop-shadow-sm">Save Dynamic Rule</button>
@@ -1012,7 +1099,7 @@
                                         <div>
                                             <label class="text-[9px] font-extrabold text-slate-400 block mb-1 uppercase tracking-wider drop-shadow-sm">Minute</label>
                                             <select x-model="selectedMinute" class="w-full p-2 bg-white border border-slate-200 rounded-lg font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-black shadow-md cursor-pointer hover:bg-slate-50 transition">
-                                                <template x-for="m in ['00','15','30','42','45','50']">
+                                                <template x-for="m in allMinutes">
                                                     <option :value="m" x-text="m + ' mins'"></option>
                                                 </template>
                                             </select>
