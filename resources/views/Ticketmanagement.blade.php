@@ -20,28 +20,84 @@
             <div class="text-xs text-slate-400 font-medium">Dashboard &nbsp;&gt;&nbsp; <span class="text-slate-700 font-semibold">Tickets</span></div>
             <div class="w-96 relative">
                 <input type="text" id="search-input" oninput="filterTickets()" placeholder="Search tickets, customers..." class="w-full bg-[#F4F7FE] border border-slate-200 rounded-full pl-9 pr-4 py-1.5 text-xs outline-none focus:border-blue-500 transition">
-                <span class="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
+                <span class="absolute left-3 top-2 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                </span>
             </div>
             <div class="flex items-center gap-4">
-                <div class="relative" id="profileMenuWrapper">
-                    <div class="flex items-center gap-3 border-l border-slate-200 pl-4 cursor-pointer" id="profileMenuBtn">
-                        <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                <!-- Notifications Bell -->
+                <div class="relative">
+                    <button onclick="toggleNotificationPanel(event)" id="notif-btn" class="relative text-slate-400 hover:text-slate-600 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        @if(count($tickets) > 0)
+                            <span id="notif-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ count($tickets) }}</span>
+                        @endif
+                    </button>
+
+                    <!-- Notifications Panel -->
+                    <div id="notif-panel" class="hidden absolute right-0 top-10 w-80 bg-white rounded-xl border border-slate-200 shadow-lg z-50 max-h-96 flex flex-col">
+                        <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-800">Notifications</span>
+                            <span class="text-[10px] text-slate-400">{{ count($tickets) }} total</span>
                         </div>
-                        <div>
-                            <div class="text-xs font-semibold text-slate-800">{{ auth()->user()->name }}</div>
-                            <div class="text-[10px] text-slate-400">{{ auth()->user()->role ?? 'Ticket Manager' }}</div>
+                        <div class="overflow-y-auto flex-1">
+                            @forelse($tickets as $ticket)
+                                <div class="px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50/70 transition flex items-start gap-2.5">
+                                    <div class="w-7 h-7 rounded-full {{ $ticket->avatar_bg }} flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                                        {{ $ticket->initials }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-[11px] text-slate-700 leading-snug">
+                                            <span class="font-semibold text-slate-900">{{ $ticket->name }}</span> created a new ticket
+                                            <span class="font-semibold">#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}</span>
+                                        </p>
+                                        <p class="text-[10px] text-slate-400 truncate">{{ $ticket->subject }}</p>
+                                        <p class="text-[9px] text-slate-400 mt-0.5">{{ $ticket->created }}</p>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="px-4 py-6 text-center text-[11px] text-slate-400">No notifications yet.</div>
+                            @endforelse
                         </div>
                     </div>
-                    <div id="profileMenuDropdown" class="hidden absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-30">
-                        <div class="px-4 py-2 border-b border-slate-100">
-                            <p class="text-xs font-semibold text-slate-700 truncate">{{ auth()->user()->name }}</p>
-                            <p class="text-[10px] text-slate-400 truncate">{{ auth()->user()->email }}</p>
+                </div>
+
+                <div class="relative">
+                    <button onclick="toggleProfileMenu(event)" id="profile-btn" class="flex items-center gap-3 border-l border-slate-200 pl-4 cursor-pointer">
+                        <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">TF</div>
+                        <div class="text-left">
+                            <div class="text-xs font-semibold text-slate-800">Timoty Filoteo</div>
+                            <div class="text-[10px] text-slate-400">Ticket Manager</div>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}">
+                    </button>
+
+                    <!-- Profile Dropdown Menu -->
+                    <div id="profile-menu" class="hidden absolute right-0 top-12 w-48 bg-white rounded-xl border border-slate-200 shadow-lg z-50 py-1.5 text-xs">
+                        <button type="button" onclick="openEditProfileModal()" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-slate-600 hover:bg-slate-50 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            My Profile
+                        </button>
+                        <button type="button" onclick="openAccountSettingsModal()" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-slate-600 hover:bg-slate-50 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Account Settings
+                        </button>
+                        <div class="border-t border-slate-100 my-1"></div>
+                        <form action="/logout" method="POST" class="m-0">
                             @csrf
-                            <button type="submit" class="w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-red-50">
-                                Log out
+                            <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-red-500 hover:bg-red-50 transition font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
                             </button>
                         </form>
                     </div>
@@ -367,146 +423,93 @@
         </div>
     </div>
 
-    <!-- 7B. EDIT TICKET MODAL -->
-    <div id="edit-ticket-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-2xl w-[450px] shadow-2xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-300">
+    <!-- 7B. EDIT PROFILE MODAL -->
+    <div id="edit-profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl w-[420px] shadow-2xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-300">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900">Edit Ticket</h3>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Update the ticket details below.</p>
+                    <h3 class="text-sm font-bold text-slate-900">Edit Profile</h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Update your personal information.</p>
                 </div>
-                <button type="button" onclick="closeEditTicketModal()" class="text-slate-400 hover:text-slate-600 font-bold bg-slate-200/60 w-6 h-6 rounded-full flex items-center justify-center text-xs">✕</button>
+                <button type="button" onclick="closeEditProfileModal()" class="text-slate-400 hover:text-slate-600 font-bold bg-slate-200/60 w-6 h-6 rounded-full flex items-center justify-center text-xs">✕</button>
             </div>
 
-            <form id="edit-ticket-form" method="POST" class="p-6 space-y-4">
+            <form action="/profile" method="POST" class="p-6 space-y-4">
                 @csrf
                 @method('PUT')
+
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-sm font-bold">TF</div>
+                    <button type="button" class="text-[10px] font-semibold text-blue-500 border border-blue-200 hover:bg-blue-50 px-2.5 py-1.5 rounded-lg transition">Change Photo</button>
+                </div>
+
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Customer Name</label>
-                    <input type="text" id="edit-customer_name" name="customer_name" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Name</label>
+                    <input type="text" name="name" value="Timoty Filoteo" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
                 </div>
                 <div>
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Email Address</label>
-                    <input type="email" id="edit-customer_email" name="customer_email" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Category</label>
-                        <select id="edit-category" name="category" required class="w-full border border-slate-200 bg-white rounded-xl px-2 py-2 text-xs outline-none focus:border-blue-500 transition">
-                            <option value="Auth">Auth</option>
-                            <option value="Billing">Billing</option>
-                            <option value="Technical">Technical</option>
-                            <option value="Feature">Feature</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Priority Level</label>
-                        <select id="edit-priority" name="priority" required class="w-full border border-slate-200 bg-white rounded-xl px-2 py-2 text-xs outline-none focus:border-blue-500 transition">
-                            <option value="LOW">LOW</option>
-                            <option value="MEDIUM">MEDIUM</option>
-                            <option value="HIGH">HIGH</option>
-                            <option value="CRITICAL">CRITICAL</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Assigned Agent</label>
-                        <select id="edit-agent_id" name="agent_id" class="w-full border border-slate-200 bg-white rounded-xl px-2 py-2 text-xs outline-none focus:border-blue-500 transition">
-                            <option value="">Unassigned</option>
-                            @foreach ($agents as $agentOption)
-                                <option value="{{ $agentOption->id }}">{{ $agentOption->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status</label>
-                        <select id="edit-status" name="status" required class="w-full border border-slate-200 bg-white rounded-xl px-2 py-2 text-xs outline-none focus:border-blue-500 transition">
-                            <option value="OPEN">OPEN</option>
-                            <option value="PENDING">PENDING</option>
-                            <option value="IN PROGRESS">IN PROGRESS</option>
-                            <option value="RESOLVED">RESOLVED</option>
-                            <option value="CLOSED">CLOSED</option>
-                        </select>
-                    </div>
+                    <input type="email" name="email" value="timoty@company.com" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Subject Issue</label>
-                    <input type="text" id="edit-subject" name="subject" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Description</label>
-                    <textarea id="edit-description" name="description" rows="3" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Job Title</label>
+                    <input type="text" name="role" value="Ticket Manager" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
                 </div>
 
                 <div class="border-t border-slate-100 pt-4 flex gap-2 justify-end text-xs font-semibold">
-                    <button type="button" onclick="closeEditTicketModal()" class="border border-slate-200 text-slate-500 px-4 py-2 rounded-xl hover:bg-slate-50 transition">Cancel</button>
+                    <button type="button" onclick="closeEditProfileModal()" class="border border-slate-200 text-slate-500 px-4 py-2 rounded-xl hover:bg-slate-50 transition">Cancel</button>
                     <button type="submit" class="bg-[#00CB92] text-white px-5 py-2 rounded-xl hover:bg-[#00B582] transition shadow-sm">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Chatbot Widget -->
+    <!-- 7C. ACCOUNT SETTINGS MODAL -->
+    <div id="account-settings-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl w-[420px] shadow-2xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Account Settings</h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Manage your account security and preferences.</p>
+                </div>
+                <button type="button" onclick="closeAccountSettingsModal()" class="text-slate-400 hover:text-slate-600 font-bold bg-slate-200/60 w-6 h-6 rounded-full flex items-center justify-center text-xs">✕</button>
+            </div>
 
-    <div id="chatbotWidget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+            <form action="/account" method="POST" class="p-6 space-y-4">
+                @csrf
+                @method('PUT')
 
-      <!-- Chat Panel -->
-      <div id="chatPanel" class="hidden mb-4 w-[350px] sm:w-[380px] max-w-[90vw] h-[520px] max-h-[75vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Current Password</label>
+                    <input type="password" name="current_password" placeholder="Enter current password" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">New Password</label>
+                    <input type="password" name="new_password" placeholder="Enter new password" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Confirm New Password</label>
+                    <input type="password" name="new_password_confirmation" placeholder="Re-enter new password" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
+                </div>
 
-        <!-- Header -->
-        <div class="bg-[#1E3A8A] px-5 py-4 flex items-center gap-3">
-          <div class="relative w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden">
-            <img src="/assets/chatbot-avatar.png" alt="Navi Avatar" class="w-full h-full object-cover" onerror="botAvatarFallback(this)">
-          </div>
-          <div class="flex-1">
-            <p class="text-white text-sm font-semibold">Navi — Ticket Assistant</p>
-            <p class="text-blue-200 text-xs flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span> Online
-            </p>
-          </div>
-          <button id="chatCloseBtn" class="text-blue-200 hover:text-white text-lg leading-none">
-            &times;
-          </button>
+                <div class="border-t border-slate-100 pt-3 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-semibold text-slate-700">Email Notifications</div>
+                        <div class="text-[10px] text-slate-400">Get notified when a new ticket is created</div>
+                    </div>
+                    <input type="checkbox" name="email_notifications" checked class="w-4 h-4 accent-[#00CB92]">
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 flex gap-2 justify-end text-xs font-semibold">
+                    <button type="button" onclick="closeAccountSettingsModal()" class="border border-slate-200 text-slate-500 px-4 py-2 rounded-xl hover:bg-slate-50 transition">Cancel</button>
+                    <button type="submit" class="bg-[#00CB92] text-white px-5 py-2 rounded-xl hover:bg-[#00B582] transition shadow-sm">Save Changes</button>
+                </div>
+            </form>
         </div>
-
-        <!-- Messages -->
-        <div id="chatMessages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#F8FAFC]"></div>
-
-        <!-- Quick Options (dynamic) -->
-        <div id="chatOptions" class="px-4 pb-2 flex flex-wrap gap-2"></div>
-
-        <!-- Input -->
-        <form id="chatForm" class="flex items-center gap-2 px-4 py-3 border-t border-slate-100 bg-white">
-          <input id="chatInput" type="text" placeholder="Type your message..." autocomplete="off"
-            class="flex-1 bg-[#F8FAFC] border border-[#E5E7EB] rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
-          <button type="submit" class="w-10 h-10 rounded-full bg-[#10B981] flex items-center justify-center text-white hover:bg-emerald-600 transition-colors shrink-0 text-sm">
-            ➤
-          </button>
-        </form>
-      </div>
-
-      <!-- Floating Bubble Button -->
-      <button id="chatToggleBtn" class="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center hover:scale-105 transition-transform relative overflow-hidden">
-        <span class="absolute top-1 right-1 w-3.5 h-3.5 bg-[#10B981] rounded-full border-2 border-white z-10"></span>
-        <img src="/assets/chatbot-avatar.png" alt="Chatbot" class="w-full h-full object-cover" onerror="botAvatarFallback(this)">
-      </button>
     </div>
 
     <!-- 8. APP SCRIPTS -->
     <script>
-        // Fallback: if /assets/chatbot-avatar.png is missing, show a built-in robot icon instead of a broken image
-        function botAvatarFallback(imgEl) {
-          imgEl.onerror = null;
-          const wrapper = imgEl.parentElement;
-          wrapper.innerHTML = `
-            <svg viewBox="0 0 64 64" class="w-full h-full p-1.5">
-              <rect x="6" y="16" width="52" height="32" rx="16" fill="#3B82F6"/>
-              <rect x="9" y="19" width="46" height="26" rx="13" fill="#0B1220"/>
-              <circle cx="24" cy="32" r="5.5" fill="#ffffff"/>
-              <circle cx="40" cy="32" r="5.5" fill="#ffffff"/>
-            </svg>`;
-        }
         // Filter Rows Function
         function filterStatus(status, element) {
             const tabs = document.querySelectorAll('.tab-btn');
@@ -662,19 +665,9 @@
             }, 300);
         }
 
-        // Edit Ticket Modal Actions
-        function openEditModal(id, name, email, category, agentId, priority, status, subject, description) {
-            document.getElementById('edit-ticket-form').action = '/customer-service/ticket-management/' + id;
-            document.getElementById('edit-customer_name').value = name;
-            document.getElementById('edit-customer_email').value = email;
-            document.getElementById('edit-category').value = category;
-            document.getElementById('edit-agent_id').value = agentId;
-            document.getElementById('edit-priority').value = priority;
-            document.getElementById('edit-status').value = status;
-            document.getElementById('edit-subject').value = subject;
-            document.getElementById('edit-description').value = description;
-
-            const modal = document.getElementById('edit-ticket-modal');
+        // Generic modal open/close helper (used by Edit Profile & Account Settings)
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
@@ -682,8 +675,8 @@
             }, 20);
         }
 
-        function closeEditTicketModal() {
-            const modal = document.getElementById('edit-ticket-modal');
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
             modal.classList.add('opacity-0');
             modal.firstElementChild.classList.add('scale-95');
             setTimeout(() => {
@@ -691,237 +684,52 @@
             }, 300);
         }
 
-        // ================= Chatbot Widget (Navi) =================
-        const chatPanel = document.getElementById('chatPanel');
-        const chatToggleBtn = document.getElementById('chatToggleBtn');
-        const chatCloseBtn = document.getElementById('chatCloseBtn');
-        const chatMessages = document.getElementById('chatMessages');
-        const chatOptions = document.getElementById('chatOptions');
-        const chatForm = document.getElementById('chatForm');
-        const chatInput = document.getElementById('chatInput');
-
-        let chatStarted = false;
-
-        function addBotMessage(text) {
-          const div = document.createElement('div');
-          div.className = 'flex justify-start';
-          div.innerHTML = `
-            <div class="max-w-[80%] bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-slate-700 shadow-sm">
-              ${text}
-            </div>`;
-          chatMessages.appendChild(div);
-          chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Edit Profile Modal Actions
+        function openEditProfileModal() {
+            document.getElementById('profile-menu').classList.add('hidden');
+            openModal('edit-profile-modal');
+        }
+        function closeEditProfileModal() {
+            closeModal('edit-profile-modal');
         }
 
-        function addUserMessage(text) {
-          const div = document.createElement('div');
-          div.className = 'flex justify-end';
-          div.innerHTML = `
-            <div class="max-w-[80%] bg-[#1E3A8A] text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm">
-              ${text}
-            </div>`;
-          chatMessages.appendChild(div);
-          chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Account Settings Modal Actions
+        function openAccountSettingsModal() {
+            document.getElementById('profile-menu').classList.add('hidden');
+            openModal('account-settings-modal');
+        }
+        function closeAccountSettingsModal() {
+            closeModal('account-settings-modal');
         }
 
-        function showTyping() {
-          const div = document.createElement('div');
-          div.id = 'typingIndicator';
-          div.className = 'flex justify-start';
-          div.innerHTML = `
-            <div class="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay:0ms"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay:150ms"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay:300ms"></span>
-            </div>`;
-          chatMessages.appendChild(div);
-          chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Profile Dropdown Menu Actions
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            document.getElementById('notif-panel').classList.add('hidden');
+            const menu = document.getElementById('profile-menu');
+            menu.classList.toggle('hidden');
         }
 
-        function hideTyping() {
-          const el = document.getElementById('typingIndicator');
-          if (el) el.remove();
+        // Notification Panel Actions
+        function toggleNotificationPanel(event) {
+            event.stopPropagation();
+            document.getElementById('profile-menu').classList.add('hidden');
+            const panel = document.getElementById('notif-panel');
+            panel.classList.toggle('hidden');
         }
 
-        function botSay(text, delay = 700) {
-          showTyping();
-          return new Promise(resolve => {
-            setTimeout(() => {
-              hideTyping();
-              addBotMessage(text);
-              resolve();
-            }, delay);
-          });
-        }
+        // Close profile menu / notif panel kapag nag-click sa labas nito
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('profile-menu');
+            const btn = document.getElementById('profile-btn');
+            if (!menu.classList.contains('hidden') && !menu.contains(event.target) && !btn.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
 
-        function setOptions(options) {
-          chatOptions.innerHTML = '';
-          options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.textContent = opt.label;
-            btn.className = 'px-3 py-2 rounded-full border border-[#1E3A8A]/20 text-[#1E3A8A] text-xs font-medium hover:bg-[#1E3A8A] hover:text-white transition-colors';
-            btn.addEventListener('click', () => {
-              addUserMessage(opt.label);
-              clearOptions();
-              setTimeout(() => opt.action(), 350);
-            });
-            chatOptions.appendChild(btn);
-          });
-        }
-
-        function clearOptions() {
-          chatOptions.innerHTML = '';
-        }
-
-        function askAnythingElse() {
-          botSay('Is there anything else I can help you with? 😊', 600).then(() => {
-            setOptions([
-              { label: 'Yes, I have another question', action: showMainOptions },
-              { label: 'No, that\'s all, thank you', action: endChat },
-            ]);
-          });
-        }
-
-        function endChat() {
-          botSay(
-            "You're welcome! If you need anything else, I'll be right here. Have a great day! 😊",
-            600
-          );
-        }
-
-        function showMainOptions() {
-          botSay('No worries, just pick what you need below and I\'ll walk you through it:', 500).then(() => {
-            setOptions([
-              { label: '🎫 What is a ticket?', action: handleWhatIsTicket },
-              { label: '📝 How do I create a ticket?', action: handleHowToCreate },
-              { label: '📊 Check my ticket status', action: handleTicketStatus },
-              { label: '❓ Something else', action: handleGeneralSupport },
-            ]);
-          });
-        }
-
-        function handleWhatIsTicket() {
-          botSay(
-            "Great question! A <span class='font-semibold'>support ticket</span> is simply a record of your issue or request " +
-            "— like a login problem, a payment issue, or a feature request. Once it's created, our team can track it, " +
-            "assign the right agent, and update you until it's resolved. Think of it as your direct line to getting help. 🎫"
-          ).then(askAnythingElse);
-        }
-
-        function handleHowToCreate() {
-          botSay(
-            "Sure! Here's how to create a new ticket, step by step:"
-          , 500).then(() => botSay(
-            "1️⃣ Click the green <span class='font-semibold'>\"+ New Ticket\"</span> button at the top right of the page.<br>" +
-            "2️⃣ Fill in your <span class='font-semibold'>Customer Name</span> and <span class='font-semibold'>Email Address</span>.<br>" +
-            "3️⃣ Choose a <span class='font-semibold'>Category</span> (e.g. Billing, Bug, Feature) and set the <span class='font-semibold'>Priority Level</span>.<br>" +
-            "4️⃣ Pick the <span class='font-semibold'>Assigned Agent</span> who will handle it.<br>" +
-            "5️⃣ Add a short <span class='font-semibold'>Subject</span> and a <span class='font-semibold'>Full Description</span> explaining the issue.<br>" +
-            "6️⃣ Click <span class='font-semibold'>Save</span> — and that's it, your ticket is submitted! ✅"
-          , 900)).then(askAnythingElse);
-        }
-
-        function handleTicketStatus() {
-          botSay(
-            "You can check your ticket's progress right from this page — look at the <span class='font-semibold'>Status</span> column. " +
-            "Tickets usually move through: <span class='font-semibold'>Open → Pending → In Progress → Resolved</span>. " +
-            "You can also click any ticket row to open its full details, or use the tabs at the top to filter by status."
-          ).then(askAnythingElse);
-        }
-
-        function handleGeneralSupport() {
-          botSay(
-            "No problem! You can type your question below and I'll do my best to help, or one of our support staff " +
-            "can follow up with you directly. 🙂"
-          ).then(askAnythingElse);
-        }
-
-        function handlePriorityQuestion() {
-          botSay(
-            "Priority levels help us know how urgent your issue is:<br>" +
-            "🔴 <span class='font-semibold'>Critical</span> — major issue, needs immediate attention<br>" +
-            "🟠 <span class='font-semibold'>High</span> — important, handled soon<br>" +
-            "🟡 <span class='font-semibold'>Medium</span> — normal priority<br>" +
-            "⚪ <span class='font-semibold'>Low</span> — minor issue, no rush"
-          ).then(askAnythingElse);
-        }
-
-        function handleContactQuestion() {
-          botSay(
-            "You can reach our support team anytime through this dashboard, or use the 'New Ticket' button to submit " +
-            "your request directly so an agent can follow up with you."
-          ).then(askAnythingElse);
-        }
-
-        function handleFreeText(text) {
-          const t = text.toLowerCase();
-
-          if (t.includes('what is a ticket') || t.includes('what is ticket') || (t.includes('what') && t.includes('ticket'))) {
-            handleWhatIsTicket();
-          } else if (t.includes('how') && (t.includes('create') || t.includes('fill') || t.includes('submit') || t.includes('make'))) {
-            handleHowToCreate();
-          } else if (t.includes('status') || t.includes('progress') || t.includes('track')) {
-            handleTicketStatus();
-          } else if (t.includes('priority') || t.includes('urgent') || t.includes('critical')) {
-            handlePriorityQuestion();
-          } else if (t.includes('contact') || t.includes('reach') || t.includes('agent')) {
-            handleContactQuestion();
-          } else if (t.includes('thank') || t.includes('bye')) {
-            endChat();
-          } else {
-            botSay(
-              "Hmm, I might not have the exact answer to that one. 🙂 But here's how I can help — pick an option below, " +
-              "or try asking in a different way!"
-            ).then(() => {
-              setOptions([
-                { label: '🎫 What is a ticket?', action: handleWhatIsTicket },
-                { label: '📝 How do I create a ticket?', action: handleHowToCreate },
-                { label: '📊 Check my ticket status', action: handleTicketStatus },
-              ]);
-            });
-          }
-        }
-
-        function openChat() {
-          chatPanel.classList.remove('hidden');
-          chatToggleBtn.classList.add('hidden');
-          if (!chatStarted) {
-            chatStarted = true;
-            botSay(
-              "Hello dear customer! 👋 I'm <span class='font-semibold'>Navi</span>, your friendly ticket assistant. What can I help you with today?",
-              600
-            ).then(showMainOptions);
-          }
-        }
-
-        function closeChat() {
-          chatPanel.classList.add('hidden');
-          chatToggleBtn.classList.remove('hidden');
-        }
-
-        chatToggleBtn.addEventListener('click', openChat);
-        chatCloseBtn.addEventListener('click', closeChat);
-
-        chatForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const text = chatInput.value.trim();
-          if (!text) return;
-          addUserMessage(text);
-          chatInput.value = '';
-          clearOptions();
-          handleFreeText(text);
-        });
-
-        // ================= Profile Dropdown =================
-        const profileBtn = document.getElementById('profileMenuBtn');
-        const profileDropdown = document.getElementById('profileMenuDropdown');
-        profileBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            profileDropdown.classList.toggle('hidden');
-        });
-        document.addEventListener('click', (e) => {
-            if (!profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
-                profileDropdown.classList.add('hidden');
+            const panel = document.getElementById('notif-panel');
+            const notifBtn = document.getElementById('notif-btn');
+            if (!panel.classList.contains('hidden') && !panel.contains(event.target) && !notifBtn.contains(event.target)) {
+                panel.classList.add('hidden');
             }
         });
     </script>
