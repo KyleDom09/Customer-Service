@@ -41,4 +41,23 @@ class BillingItemController extends Controller
 
         return response()->json($billingItem);
     }
+
+    public function update(Request $request, BillingItem $billingItem)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'problem' => 'nullable|string',
+        ]);
+
+        $billingItem->update($validated);
+
+        return response()->json($billingItem);
+    }
+
+    public function destroy(BillingItem $billingItem)
+    {
+        $billingItem->delete();
+
+        return response()->json(['message' => 'Billing item deleted.'], 200);
+    }
 }

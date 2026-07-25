@@ -38,4 +38,23 @@ class ArticleController extends Controller
 
         return response()->json($article);
     }
+
+    public function update(Request $request, Article $article)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $article->update($validated);
+
+        return response()->json($article);
+    }
+
+    public function destroy(Article $article)
+    {
+        $article->delete();
+
+        return response()->json(['message' => 'Article deleted.'], 200);
+    }
 }

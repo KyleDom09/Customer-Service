@@ -52,6 +52,8 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
     Route::post('/notifications/mark-read', [ActivityLogController::class, 'markAllRead']);
 
     // Self-Service Portal
+    // Self-Service Portal
+
     Route::prefix('self-service')->group(function () {
 
         Route::get('/', function () {
@@ -61,15 +63,32 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
         Route::get('/billing-items', [BillingItemController::class, 'index']);
         Route::post('/billing-items', [BillingItemController::class, 'store']);
         Route::patch('/billing-items/{billingItem}/rate', [BillingItemController::class, 'rate']);
+        Route::put('/billing-items/{billingItem}', [BillingItemController::class, 'update']);
+        Route::delete('/billing-items/{billingItem}', [BillingItemController::class, 'destroy']);
 
         Route::get('/articles', [ArticleController::class, 'index']);
         Route::post('/articles', [ArticleController::class, 'store']);
         Route::patch('/articles/{article}/rate', [ArticleController::class, 'rate']);
+        Route::put('/articles/{article}', [ArticleController::class, 'update']);
+        Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
 
         Route::get('/refund-requests', [RefundRequestController::class, 'index']);
         Route::post('/refund-requests', [RefundRequestController::class, 'store']);
         Route::delete('/refund-requests/{refundRequest}', [RefundRequestController::class, 'destroy']);
 
+        // Admin - Refund Requests management
+        Route::get('/refund-requests/admin', function () {
+            return view('admin-refund-requests');
+        });
+        Route::get('/refund-requests/admin-data', [RefundRequestController::class, 'adminIndex']);
+        Route::patch('/refund-requests/{refundRequest}/approve', [RefundRequestController::class, 'approve']);
+        Route::patch('/refund-requests/{refundRequest}/reject', [RefundRequestController::class, 'reject']);
+        Route::delete('/refund-requests/{refundRequest}/admin', [RefundRequestController::class, 'adminDestroy']);
+
+        // Admin - Full self-service portal (billing, articles, refunds management)
+        Route::get('/admin', function () {
+            return view('admin-selfserviceportal');
+        });
 
     });
 
