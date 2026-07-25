@@ -164,7 +164,6 @@
                                 <th class="px-6 py-3">Status</th>
                                 <th class="px-6 py-3">Created</th>
                                 <th class="px-6 py-3 text-right">Last Updated</th>
-                                <th class="px-6 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="text-xs divide-y divide-slate-100 text-slate-600">
@@ -172,7 +171,7 @@
                             <tr data-status="{{ $ticket->status }}"
                                 data-search="{{ strtolower($ticket->customer_name . ' ' . $ticket->customer_email . ' ' . $ticket->subject . ' TK-' . str_pad($ticket->id, 4, '0', STR_PAD_LEFT) . ' ' . $ticket->category) }}"
                                 data-id="{{ $ticket->id }}"
-                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}', {{ $ticket->id }})"
+                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}', {{ $ticket->id }}, '{{ $ticket->agent }}', '{{ $ticket->agent_initials }}', '{{ $ticket->agent_bg }}')"
                                 class="ticket-row hover:bg-slate-50/50 transition-colors cursor-pointer">
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center gap-2.5">
@@ -231,17 +230,6 @@
                                 
                                 <td class="px-6 py-3.5 text-slate-400 font-medium">{{ $ticket->created }}</td>
                                 <td class="px-6 py-3.5 text-right text-slate-400 font-medium">{{ $ticket->updated }}</td>
-                                <td class="px-6 py-3.5 text-right" onclick="event.stopPropagation();">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" onsubmit="return confirm('Sigurado ka bang gusto mong i-delete ang ticket na ito?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-500 hover:text-red-700 text-[10px] font-semibold border border-red-200 hover:bg-red-50 px-2 py-1 rounded-lg transition">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -300,7 +288,7 @@
             <div class="flex items-center gap-1.5 mt-1.5">
                 <label class="text-[9px] text-slate-400 font-medium">Send as:</label>
                 <select id="chat-sender-role" class="text-[9px] border border-slate-200 rounded-md px-1.5 py-0.5 outline-none bg-white text-slate-600">
-                    <option value="admin">Admin / Agent</option>
+                    <option id="chat-sender-agent-option" value="admin">Assigned Agent</option>
                     <option value="customer">Customer</option>
                 </select>
             </div>
@@ -308,8 +296,8 @@
             <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Assigned Agent</p>
             <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100 text-xs">
                 <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-[10px]">MC</div>
-                    <span class="font-semibold text-slate-700">Mike Chen</span>
+                    <div id="drawer-agent-initials" class="w-6 h-6 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-[10px]">MC</div>
+                    <span id="drawer-agent-name" class="font-semibold text-slate-700">Mike Chen</span>
                 </div>
                 <span class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">⭐ 4.9</span>
             </div>
@@ -508,6 +496,10 @@
         // ang buong UX flow (send -> waiting -> reply -> updated).
 
         let currentTicketKey = null;
+        let currentAgentName = 'Unassigned';
+        let currentAgentInitials = '--';
+        let currentAgentBg = 'bg-[#E0F2FE] text-[#0369A1]';
+        let currentCustomerName = 'Customer';
 
         function chatStorageKey(ticketId) {
             return 'ticket_chat_' + ticketId;
@@ -518,11 +510,11 @@
             if (raw) {
                 try { return JSON.parse(raw); } catch (e) { /* fallthrough */ }
             }
-            // Default seed conversation (matches the old static timeline)
+            // Default seed conversation, using the ticket's actual assigned agent
             return [
-                { role: 'customer', name: 'Sarah Johnson', text: "I can't login at all, getting error 401", time: '10:23 AM' },
-                { role: 'admin', name: 'Mike Chen (Agent)', text: "I'm looking into this, checking auth service logs", time: '10:35 AM' },
-                { role: 'customer', name: 'Sarah Johnson', text: 'Still not working, please help!', time: '11:02 AM' }
+                { role: 'customer', name: currentCustomerName, text: "I can't login at all, getting error 401", time: '10:23 AM' },
+                { role: 'admin', name: currentAgentName + ' (Agent)', text: "I'm looking into this, checking auth service logs", time: '10:35 AM' },
+                { role: 'customer', name: currentCustomerName, text: 'Still not working, please help!', time: '11:02 AM' }
             ];
         }
 
@@ -584,7 +576,7 @@
             if (!text) return;
 
             const role = document.getElementById('chat-sender-role').value; // 'admin' or 'customer'
-            const name = role === 'admin' ? 'Mike Chen (Agent)' : document.getElementById('drawer-name').innerText;
+            const name = role === 'admin' ? (currentAgentName + ' (Agent)') : document.getElementById('drawer-name').innerText;
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const messages = loadChatMessages(currentTicketKey);
@@ -599,8 +591,28 @@
             // at ma-broadcast sa ibang connected user (real admin/customer).
         }
 
+        // Search Bar Filter Function
+        let currentStatusFilter = 'ALL';
+
+        function filterTickets() {
+            const query = document.getElementById('search-input').value.trim().toLowerCase();
+            const rows = document.querySelectorAll('.ticket-row');
+
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status').trim().toUpperCase();
+                const rowSearch = row.getAttribute('data-search') || '';
+
+                const matchesStatus = (currentStatusFilter === 'ALL' || rowStatus === currentStatusFilter);
+                const matchesSearch = (query === '' || rowSearch.includes(query));
+
+                row.style.display = (matchesStatus && matchesSearch) ? '' : 'none';
+            });
+        }
+
         // Filter Rows Function
         function filterStatus(status, element) {
+            currentStatusFilter = status;
+
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(tab => {
                 tab.classList.remove('bg-[#00CB92]', 'text-white', 'font-semibold');
@@ -612,25 +624,28 @@
                 element.classList.add('bg-[#00CB92]', 'text-white', 'font-semibold');
             }
 
-            const rows = document.querySelectorAll('.ticket-row');
-            rows.forEach(row => {
-                const rowStatus = row.getAttribute('data-status').trim().toUpperCase();
-                if (status === 'ALL' || rowStatus === status) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+            filterTickets();
         }
 
         // Ticket Detail Drawer Actions
-        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId) {
+        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId, agentName, agentInitials, agentBg) {
             document.getElementById('drawer-id').innerText = 'Ticket ' + id;
             document.getElementById('drawer-name').innerText = name;
             document.getElementById('drawer-email').innerText = email;
             document.getElementById('drawer-initials').innerText = initials;
             document.getElementById('drawer-initials').className = `w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${avatarBg}`;
             document.getElementById('drawer-category').innerText = category;
+
+            // Update the Assigned Agent card + remember it for chat replies
+            currentAgentName = agentName || 'Unassigned';
+            currentAgentInitials = agentInitials || '--';
+            currentAgentBg = agentBg || 'bg-[#E0F2FE] text-[#0369A1]';
+            currentCustomerName = name;
+            document.getElementById('drawer-agent-name').innerText = currentAgentName;
+            document.getElementById('drawer-agent-initials').innerText = currentAgentInitials;
+            document.getElementById('drawer-agent-initials').className = `w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${currentAgentBg}`;
+            const agentOption = document.getElementById('chat-sender-agent-option');
+            if (agentOption) agentOption.innerText = currentAgentName + ' (Agent)';
 
             const pBadge = document.getElementById('drawer-priority');
             pBadge.innerText = priority;
