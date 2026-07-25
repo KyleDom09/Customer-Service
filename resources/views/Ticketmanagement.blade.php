@@ -176,11 +176,6 @@
                                 <td class="px-6 py-3.5 text-right text-slate-400 font-medium">{{ $ticket->updated }}</td>
                                 <td class="px-6 py-3.5 text-right" onclick="event.stopPropagation();">
                                     <div class="flex items-center justify-end gap-1.5">
-                                        <button type="button"
-                                            onclick="openEditModal({{ $ticket->id }}, '{{ addslashes($ticket->customer_name) }}', '{{ addslashes($ticket->customer_email) }}', '{{ addslashes($ticket->category) }}', '{{ $ticket->agent_id }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ addslashes($ticket->subject) }}', '{{ addslashes($ticket->description) }}')"
-                                            class="text-blue-500 hover:text-blue-700 text-[10px] font-semibold border border-blue-200 hover:bg-blue-50 px-2 py-1 rounded-lg transition">
-                                            Edit
-                                        </button>
                                         <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" onsubmit="return confirm('Sigurado ka bang gusto mong i-delete ang ticket na ito?');">
                                             @csrf
                                             @method('DELETE')
