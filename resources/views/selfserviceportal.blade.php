@@ -121,6 +121,26 @@
             this.refundSubmitted = false;
             this.resetRefundForm();
         },
+        async deleteRefundRequest(id) {
+            if (!confirm('Are you sure you want to cancel this return request?')) return;
+
+            try {
+                const response = await fetch('/customer-service/self-service/refund-requests/' + id, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': this.csrfToken()
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete refund request');
+
+                this.refundRequests = this.refundRequests.filter(r => r.id !== id);
+                this.addNotification('Return request cancelled.');
+            } catch (e) {
+                console.error('Failed to delete refund request', e);
+                alert('Something went wrong. Please try again.');
+            }
+        },
         async rateItem(item, stars) {
             item.rating = stars;
             let endpoint = item.hasOwnProperty('problem')
@@ -793,13 +813,20 @@
                                                 <p class="mt-1 text-xs text-slate-500" x-text="request.description"></p>
                                                 <p class="mt-2 text-[11px] text-slate-400" x-text="'Submitted ' + request.submittedAt"></p>
                                             </div>
-                                            <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
-                                                  :class="{
-                                                      'bg-amber-100 text-amber-700': request.status === 'pending',
-                                                      'bg-emerald-100 text-emerald-700': request.status === 'approved',
-                                                      'bg-rose-100 text-rose-700': request.status === 'rejected'
-                                                  }"
-                                                  x-text="request.status"></span>
+                                            <div class="flex flex-col items-end space-y-1.5">
+                                                <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                                                      :class="{
+                                                          'bg-amber-100 text-amber-700': request.status === 'pending',
+                                                          'bg-emerald-100 text-emerald-700': request.status === 'approved',
+                                                          'bg-rose-100 text-rose-700': request.status === 'rejected'
+                                                      }"
+                                                      x-text="request.status"></span>
+                                                <button x-show="request.status === 'pending'"
+                                                        @click="deleteRefundRequest(request.id)"
+                                                        class="text-[10px] font-semibold text-rose-500 hover:text-rose-700 hover:underline cursor-pointer">
+                                                    Cancel
+                                                </button>
+                                            </div>
                                         </div>
                                         <template x-if="request.imagePreview">
                                             <img :src="request.imagePreview" alt="Refund attachment" class="mt-3 h-24 w-full rounded-lg border border-slate-200 object-cover">

@@ -34,4 +34,15 @@ class RefundRequestController extends Controller
 
         return response()->json($refundRequest, 201);
     }
+
+    public function destroy(RefundRequest $refundRequest)
+    {
+        if ($refundRequest->status !== 'pending') {
+            return response()->json(['message' => 'Only pending requests can be cancelled.'], 403);
+        }
+
+        $refundRequest->delete();
+
+        return response()->json(['message' => 'Refund request deleted.'], 200);
+    }
 }

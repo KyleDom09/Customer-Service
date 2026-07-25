@@ -68,6 +68,7 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
 
         Route::get('/refund-requests', [RefundRequestController::class, 'index']);
         Route::post('/refund-requests', [RefundRequestController::class, 'store']);
+        Route::delete('/refund-requests/{refundRequest}', [RefundRequestController::class, 'destroy']);
 
 
     });
