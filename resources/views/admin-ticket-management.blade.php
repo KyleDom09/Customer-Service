@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Service - Ticket Management</title>
+    <title>Customer Service - Ticket Management (Admin View)</title>
     <script src="{{ asset('vendor/tailwind.js') }}"></script>
     <style> body { font-family: 'Segoe UI', 'Inter', sans-serif; } </style>
 </head>
@@ -242,81 +242,130 @@
 
     <!-- 6. TICKET DETAIL DRAWER -->
     <div id="ticket-drawer" class="fixed inset-y-0 right-0 w-[380px] bg-white shadow-2xl border-l border-slate-200 z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col justify-between p-6">
-        <div class="overflow-y-auto flex-1 pr-1">
-            <div class="flex justify-between items-start border-b border-slate-100 pb-4">
-                <div>
-                    <h2 id="drawer-id" class="text-sm font-bold text-slate-900">Ticket #TK-2847</h2>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Opened Jan 15, 2026</p>
+
+        <form id="ticket-edit-form" method="POST" action="" class="flex flex-col justify-between flex-1 overflow-hidden">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="customer_name" id="field-customer_name">
+            <input type="hidden" name="customer_email" id="field-customer_email">
+
+            <div class="overflow-y-auto flex-1 pr-1">
+                <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 id="drawer-id" class="text-sm font-bold text-slate-900">Ticket #TK-2847</h2>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Opened Jan 15, 2026</p>
+                    </div>
+                    <button type="button" onclick="closeDrawer()" class="text-slate-400 hover:text-slate-600 text-sm font-bold bg-slate-100 w-6 h-6 rounded-full flex items-center justify-center">✕</button>
                 </div>
-                <button onclick="closeDrawer()" class="text-slate-400 hover:text-slate-600 text-sm font-bold bg-slate-100 w-6 h-6 rounded-full flex items-center justify-center">✕</button>
-            </div>
 
-            <div class="flex gap-2 mt-4">
-                <span id="drawer-priority" class="px-2 py-0.5 rounded text-[9px] font-bold border tracking-wider bg-red-50 text-red-600 border-red-200">CRITICAL</span>
-                <span id="drawer-status" class="px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-blue-50 text-blue-600 border border-blue-100">OPEN</span>
-                <span id="drawer-waiting-badge" class="hidden px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">⏳ Naghihintay ng reply ng admin</span>
-            </div>
-
-            <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Customer</p>
-            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center gap-3">
-                <div id="drawer-initials" class="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#4F46E5] flex items-center justify-center font-bold text-xs">SJ</div>
-                <div>
-                    <div id="drawer-name" class="text-xs font-bold text-slate-800">Sarah Johnson</div>
-                    <div id="drawer-email" class="text-[10px] text-slate-400">sarah@techcorp.com</div>
-                    <div class="text-[9px] text-slate-400 font-medium">TechCorp Inc.</div>
+                <div class="flex gap-2 mt-4 items-center flex-wrap">
+                    <select name="priority" id="drawer-priority" onchange="adminChangePriority()" class="px-2 py-1 rounded text-[9px] font-bold border tracking-wider bg-red-50 text-red-600 border-red-200 outline-none cursor-pointer">
+                        <option value="CRITICAL">CRITICAL</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="LOW">LOW</option>
+                    </select>
+                    <select name="status" id="drawer-status" onchange="adminChangeStatus()" class="px-2 py-1 rounded text-[9px] font-bold tracking-wider bg-blue-50 text-blue-600 border border-blue-100 outline-none cursor-pointer">
+                        <option value="OPEN">OPEN</option>
+                        <option value="PENDING">PENDING</option>
+                        <option value="IN PROGRESS">IN PROGRESS</option>
+                        <option value="RESOLVED">RESOLVED</option>
+                        <option value="CLOSED">CLOSED</option>
+                    </select>
+                    <span id="drawer-waiting-badge" class="hidden px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">⏳ Waiting for your reply</span>
                 </div>
-            </div>
 
-            <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-1">Description</p>
-            <p id="drawer-subject-desc" class="text-xs text-slate-600 leading-relaxed bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                User is unable to login to their account. Error appears after entering credentials. Issue started after the recent system update.
-            </p>
-
-            <!-- LIVE CHAT / CONVERSATION -->
-            <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Conversation</p>
-            <div id="drawer-chat-messages" class="space-y-3 bg-slate-50/60 border border-slate-100 rounded-xl p-3 max-h-64 overflow-y-auto">
-                <!-- chat bubbles injected here by JS -->
-            </div>
-
-            <!-- Reply composer (Customer POV) -->
-            <form id="chat-reply-form" onsubmit="sendChatMessage(event)" class="mt-3 flex items-end gap-2">
-                <textarea id="chat-input" rows="2" placeholder="I-type ang iyong reply..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
-                <button type="submit" class="bg-[#00CB92] text-white w-9 h-9 shrink-0 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center">
-                    ↩
-                </button>
-            </form>
-
-            <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Assigned Agent</p>
-            <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100 text-xs">
-                <div class="flex items-center gap-2">
-                    <div id="drawer-agent-initials" class="w-6 h-6 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-[10px]">MC</div>
-                    <span id="drawer-agent-name" class="font-semibold text-slate-700">Mike Chen</span>
+                <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Customer</p>
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center gap-3">
+                    <div id="drawer-initials" class="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#4F46E5] flex items-center justify-center font-bold text-xs">SJ</div>
+                    <div>
+                        <div id="drawer-name" class="text-xs font-bold text-slate-800">Sarah Johnson</div>
+                        <div id="drawer-email" class="text-[10px] text-slate-400">sarah@techcorp.com</div>
+                        <div class="text-[9px] text-slate-400 font-medium">TechCorp Inc.</div>
+                    </div>
                 </div>
-                <span class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">⭐ 4.9</span>
-            </div>
 
-            <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Details</p>
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 text-[11px] mb-4">
-                <div class="flex justify-between"><span class="text-slate-400">Category:</span><span id="drawer-category" class="font-semibold text-slate-700">Authentication</span></div>
-                <div class="flex justify-between"><span class="text-slate-400">Created:</span><span class="font-semibold text-slate-700">Jan 15, 2026</span></div>
-                <div>
-                    <div class="flex justify-between text-red-500 font-semibold mb-1"><span>SLA Status:</span><span>2 hrs remaining</span></div>
-                    <div class="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                        <div class="w-[20%] h-full bg-red-500"></div>
+                <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-1">Subject</p>
+                <input type="text" name="subject" id="drawer-subject-input" class="w-full text-xs font-semibold text-slate-800 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100 outline-none focus:border-blue-500 transition">
+
+                <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-4 mb-1">Description</p>
+                <textarea name="description" id="drawer-subject-desc" rows="3" class="w-full text-xs text-slate-600 leading-relaxed bg-slate-50/50 p-2.5 rounded-lg border border-slate-100 outline-none focus:border-blue-500 transition resize-none">User is unable to login to their account. Error appears after entering credentials. Issue started after the recent system update.</textarea>
+
+                <!-- LIVE CHAT / CONVERSATION -->
+                <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Conversation</p>
+                <div id="drawer-chat-messages" class="space-y-3 bg-slate-50/60 border border-slate-100 rounded-xl p-3 max-h-64 overflow-y-auto">
+                    <!-- chat bubbles injected here by JS -->
+                </div>
+
+                <!-- Reply composer (Admin/Agent POV) -->
+                <div class="mt-3 flex items-end gap-2">
+                    <textarea id="chat-input" rows="2" placeholder="I-type ang reply mo bilang agent..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
+                    <button type="button" onclick="sendChatMessage(event)" class="bg-[#00CB92] text-white w-9 h-9 shrink-0 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center">
+                        ↩
+                    </button>
+                </div>
+
+                <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Assigned Agent</p>
+                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100 text-xs gap-2">
+                    <div class="flex items-center gap-2 flex-1">
+                        <div id="drawer-agent-initials" class="w-6 h-6 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-[10px] shrink-0">MC</div>
+                        <select name="agent_id" id="drawer-agent-select" onchange="adminChangeAgent()" class="font-semibold text-slate-700 bg-transparent outline-none flex-1 cursor-pointer">
+                            @foreach ($agents as $agentOption)
+                                <option value="{{ $agentOption->id }}" data-name="{{ $agentOption->name }}" data-initials="{{ $agentOption->initials ?? '' }}">{{ $agentOption->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <span class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0">⭐ 4.9</span>
+                </div>
+
+                <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Details</p>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 text-[11px] mb-4">
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Category:</span>
+                        <select name="category" id="drawer-category" onchange="adminChangeCategory()" class="font-semibold text-slate-700 bg-transparent outline-none text-right cursor-pointer">
+                            <option value="Auth">Auth</option>
+                            <option value="Billing">Billing</option>
+                            <option value="Technical">Technical</option>
+                            <option value="Feature">Feature</option>
+                            <option value="Bug">Bug</option>
+                            <option value="Perf">Perf</option>
+                            <option value="Integration">Integration</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-between"><span class="text-slate-400">Created:</span><span class="font-semibold text-slate-700">Jan 15, 2026</span></div>
+                    <div>
+                        <div class="flex justify-between text-red-500 font-semibold mb-1"><span>SLA Status:</span><span>2 hrs remaining</span></div>
+                        <div class="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="w-[20%] h-full bg-red-500"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="space-y-2 border-t border-slate-100 pt-4 bg-white">
-            <button onclick="document.getElementById('chat-input').focus()" class="w-full bg-[#00CB92] text-white py-2 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center gap-1.5">
-                <span>↩</span> Reply
-            </button>
-            <button onclick="closeDrawer()" class="w-full border border-slate-200 text-slate-500 py-2 rounded-xl text-xs font-semibold hover:bg-slate-50 transition text-center">
-                Close Ticket
-            </button>
-        </div>
+            <div class="space-y-2 border-t border-slate-100 pt-4 bg-white">
+                <button type="submit" class="w-full bg-[#00CB92] text-white py-2 rounded-xl text-xs font-semibold hover:bg-[#00B582] transition flex items-center justify-center gap-1.5">
+                    <span>💾</span> Save Changes
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="quickSetStatus('RESOLVED')" class="w-full border border-green-200 text-green-600 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 transition">
+                        ✓ Resolve
+                    </button>
+                    <button type="button" onclick="quickSetStatus('CLOSED')" class="w-full border border-slate-200 text-slate-500 py-2 rounded-xl text-xs font-semibold hover:bg-slate-50 transition">
+                        Close Ticket
+                    </button>
+                </div>
+                <button type="button" onclick="deleteCurrentTicket()" class="w-full border border-red-200 text-red-500 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 transition">
+                    🗑 Delete Ticket
+                </button>
+            </div>
+        </form>
     </div>
+
+    <!-- Hidden delete form (submitted dynamically via JS for the ticket currently open in the drawer) -->
+    <form id="ticket-delete-form" method="POST" action="" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
+
 
     <!-- 7. NEW INTERACTIVE MODAL FOR "+ NEW TICKET" -->
     <div id="new-ticket-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
@@ -478,16 +527,6 @@
         // ==============================
         // CHAT / CONVERSATION SYSTEM
         // ==============================
-        // NOTE: Ito ay client-side demo/prototype gamit ang localStorage bilang
-        // pansamantalang "storage". Para gumana ito nang totoo across users
-        // (customer sa isang device, admin sa iba), kailangan mo ng backend:
-        //   - isang `messages` table (ticket_id, sender_role, sender_name, body, created_at)
-        //   - route/controller para mag-store ng bagong message (POST)
-        //   - polling (setInterval fetch) o Laravel Echo/Pusher/WebSockets para
-        //     real-time yung pag-abot ng reply nang hindi kailangang mag-refresh.
-        // Hanggang doon, ito muna ang gumagana sa browser mo para makita agad
-        // ang buong UX flow (send -> waiting -> reply -> updated).
-
         let currentTicketKey = null;
         let currentAgentName = 'Unassigned';
         let currentAgentInitials = '--';
@@ -503,7 +542,6 @@
             if (raw) {
                 try { return JSON.parse(raw); } catch (e) { /* fallthrough */ }
             }
-            // Default seed conversation, using the ticket's actual assigned agent
             return [
                 { role: 'customer', name: currentCustomerName, text: "I can't login at all, getting error 401", time: '10:23 AM' },
                 { role: 'admin', name: currentAgentName + ' (Agent)', text: "I'm looking into this, checking auth service logs", time: '10:35 AM' },
@@ -554,7 +592,6 @@
             const badge = document.getElementById('drawer-waiting-badge');
             if (!messages.length) { badge.classList.add('hidden'); return; }
             const lastMsg = messages[messages.length - 1];
-            // Show "waiting for admin" badge only if the last message was sent by the customer
             if (lastMsg.role === 'customer') {
                 badge.classList.remove('hidden');
             } else {
@@ -576,67 +613,84 @@
             const text = input.value.trim();
             if (!text) return;
 
-            // Customer POV: lahat ng galing sa reply box na ito ay mula sa customer
-            const name = currentCustomerName;
+            const name = currentAgentName + ' (Agent)';
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const messages = loadChatMessages(currentTicketKey);
-            messages.push({ role: 'customer', name, text, time });
+            messages.push({ role: 'admin', name, text, time });
             saveChatMessages(currentTicketKey, messages);
 
             input.value = '';
             renderChatMessages(currentTicketKey);
 
-            // Once the customer sends a message, the ticket moves to PENDING
-            // (waiting for an agent) — professional customer-service behavior.
-            setTicketStatus(currentTicketKey, 'PENDING');
-
-            // Show a brief "typing" delay then insert a professional auto-reply,
-            // similar to real support widgets (Intercom/Zendesk-style greeting).
-            const typingId = showTypingIndicator();
-            setTimeout(() => {
-                hideTypingIndicator(typingId);
-                const freshMessages = loadChatMessages(currentTicketKey);
-                const autoReplyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                freshMessages.push({
-                    role: 'system',
-                    name: 'Support Bot',
-                    text: `Hi ${name.split(' ')[0]}! Thank you for reaching out. Your message has been received and your ticket is now marked as Pending. Please wait while we connect you to the next available agent — we'll get back to you as soon as possible.`,
-                    time: autoReplyTime
-                });
-                saveChatMessages(currentTicketKey, freshMessages);
-                renderChatMessages(currentTicketKey);
-            }, 1200);
-
-            // TODO (backend): dito mo ilalagay ang fetch()/axios POST papuntang
-            // route na gaya ng `/tickets/{id}/messages` para ma-save sa database,
-            // ma-update ang status sa PENDING sa server side, at ma-trigger ang
-            // notification papunta sa mga agents.
+            const currentStatus = document.getElementById('drawer-status').value;
+            if (currentStatus === 'OPEN' || currentStatus === 'PENDING') {
+                setTicketStatus(currentTicketKey, 'IN PROGRESS');
+            }
         }
 
-        function showTypingIndicator() {
-            const container = document.getElementById('drawer-chat-messages');
-            const el = document.createElement('div');
-            el.className = 'flex justify-center';
-            el.id = 'typing-indicator';
-            el.innerHTML = `<div class="text-[9px] text-slate-400 italic px-3 py-1">Support Bot is typing...</div>`;
-            container.appendChild(el);
-            container.scrollTop = container.scrollHeight;
-            return 'typing-indicator';
+        // ==============================
+        // ADMIN EDIT ACTIONS
+        // ==============================
+        function adminChangeStatus() {
+            const status = document.getElementById('drawer-status').value;
+            setTicketStatus(currentTicketKey, status);
         }
 
-        function hideTypingIndicator(id) {
-            const el = document.getElementById(id);
-            if (el) el.remove();
+        function adminChangePriority() {
+            const priority = document.getElementById('drawer-priority').value;
+            const select = document.getElementById('drawer-priority');
+            select.className = 'px-2 py-1 rounded text-[9px] font-bold border tracking-wider outline-none cursor-pointer ' + priorityClasses(priority);
+
+            const row = document.querySelector(`.ticket-row[data-id="${currentTicketKey}"]`);
+            if (row) {
+                const cell = row.querySelector('td:nth-child(6) span');
+                if (cell) {
+                    cell.innerText = priority;
+                    cell.className = 'px-2 py-0.5 rounded text-[9px] font-bold border tracking-wider ' + priorityClasses(priority);
+                }
+            }
+        }
+
+        function adminChangeCategory() {
+            const category = document.getElementById('drawer-category').value;
+            const row = document.querySelector(`.ticket-row[data-id="${currentTicketKey}"]`);
+            if (row) {
+                const cell = row.querySelector('td:nth-child(4) span');
+                if (cell) cell.innerHTML = '📁 ' + category;
+            }
+        }
+
+        function adminChangeAgent() {
+            const select = document.getElementById('drawer-agent-select');
+            const agentName = select.value;
+            const initials = select.options[select.selectedIndex].dataset.initials || agentName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+            currentAgentName = agentName;
+            currentAgentInitials = initials;
+            document.getElementById('drawer-agent-initials').innerText = initials;
+
+            const row = document.querySelector(`.ticket-row[data-id="${currentTicketKey}"]`);
+            if (row) {
+                const agentCell = row.querySelector('td:nth-child(5) span.font-medium');
+                const agentInitialsCell = row.querySelector('td:nth-child(5) .rounded-full');
+                if (agentCell) agentCell.innerText = agentName;
+                if (agentInitialsCell) agentInitialsCell.innerText = initials;
+            }
+        }
+
+        function priorityClasses(priority) {
+            if (priority === 'CRITICAL') return 'bg-red-50 text-red-600 border-red-200';
+            if (priority === 'HIGH') return 'bg-orange-50 text-orange-600 border-orange-200';
+            if (priority === 'MEDIUM') return 'bg-amber-50 text-amber-600 border-amber-200';
+            return 'bg-slate-100 text-slate-500 border-slate-200';
         }
 
         function setTicketStatus(ticketId, newStatus) {
-            // Update the drawer badge
-            const sBadge = document.getElementById('drawer-status');
-            sBadge.innerText = newStatus;
-            sBadge.className = 'px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ' + statusClasses(newStatus);
+            const sSelect = document.getElementById('drawer-status');
+            sSelect.value = newStatus;
+            sSelect.className = 'px-2 py-1 rounded text-[9px] font-bold tracking-wider outline-none cursor-pointer ' + statusClasses(newStatus);
 
-            // Update the matching row in the table (status text + data-status attr)
             const row = document.querySelector(`.ticket-row[data-id="${ticketId}"]`);
             if (row) {
                 row.setAttribute('data-status', newStatus);
@@ -645,7 +699,6 @@
                     statusCell.innerText = newStatus;
                     statusCell.className = 'px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ' + statusClasses(newStatus);
                 }
-                // Re-apply current tab/search filter so the row moves correctly
                 filterTickets();
             }
         }
@@ -696,40 +749,51 @@
 
         // Ticket Detail Drawer Actions
         function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId, agentName, agentInitials, agentBg) {
+            // FIX: set the form actions dynamically based on the ticket being opened
+            var baseUrl = "{{ url('/customer-service/ticket-management') }}";
+            document.getElementById('ticket-edit-form').action = baseUrl + '/' + ticketId;
+            document.getElementById('ticket-delete-form').action = baseUrl + '/' + ticketId;
+
             document.getElementById('drawer-id').innerText = 'Ticket ' + id;
             document.getElementById('drawer-name').innerText = name;
             document.getElementById('drawer-email').innerText = email;
             document.getElementById('drawer-initials').innerText = initials;
             document.getElementById('drawer-initials').className = `w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${avatarBg}`;
-            document.getElementById('drawer-category').innerText = category;
 
-            // Update the Assigned Agent card + remember it for chat replies
+            // Keep hidden fields in sync so the update request has customer_name/email too
+            document.getElementById('field-customer_name').value = name;
+            document.getElementById('field-customer_email').value = email;
+
+            // Subject + description fields
+            document.getElementById('drawer-subject-input').value = subject;
+
+            // Category select
+            const catSelect = document.getElementById('drawer-category');
+            if ([...catSelect.options].some(o => o.value === category)) {
+                catSelect.value = category;
+            }
+
+            // Priority select
+            const pSelect = document.getElementById('drawer-priority');
+            pSelect.value = priority;
+            pSelect.className = 'px-2 py-1 rounded text-[9px] font-bold border tracking-wider outline-none cursor-pointer ' + priorityClasses(priority);
+
+            // Status select
+            const sSelect = document.getElementById('drawer-status');
+            sSelect.value = status;
+            sSelect.className = 'px-2 py-1 rounded text-[9px] font-bold tracking-wider outline-none cursor-pointer ' + statusClasses(status);
+
+            // Update the Assigned Agent select + remember it for chat replies
             currentAgentName = agentName || 'Unassigned';
             currentAgentInitials = agentInitials || '--';
             currentAgentBg = agentBg || 'bg-[#E0F2FE] text-[#0369A1]';
             currentCustomerName = name;
-            document.getElementById('drawer-agent-name').innerText = currentAgentName;
+            const agentSelect = document.getElementById('drawer-agent-select');
+            if ([...agentSelect.options].some(o => o.value === currentAgentName)) {
+                agentSelect.value = currentAgentName;
+            }
             document.getElementById('drawer-agent-initials').innerText = currentAgentInitials;
-            document.getElementById('drawer-agent-initials').className = `w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${currentAgentBg}`;
-            const agentOption = document.getElementById('chat-sender-agent-option');
-            if (agentOption) agentOption.innerText = currentAgentName + ' (Agent)';
-
-            const pBadge = document.getElementById('drawer-priority');
-            pBadge.innerText = priority;
-            pBadge.className = 'px-2 py-0.5 rounded text-[9px] font-bold border tracking-wider ';
-            if(priority === 'CRITICAL') pBadge.className += 'bg-red-50 text-red-600 border-red-200';
-            else if(priority === 'HIGH') pBadge.className += 'bg-orange-50 text-orange-600 border-orange-200';
-            else if(priority === 'MEDIUM') pBadge.className += 'bg-amber-50 text-amber-600 border-amber-200';
-            else pBadge.className += 'bg-slate-100 text-slate-500 border-slate-200';
-
-            const sBadge = document.getElementById('drawer-status');
-            sBadge.innerText = status;
-            sBadge.className = 'px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ';
-            if(status === 'OPEN') sBadge.className += 'bg-blue-50 text-blue-600 border border-blue-100';
-            else if(status === 'IN PROGRESS') sBadge.className += 'bg-purple-50 text-purple-600 border border-purple-100';
-            else if(status === 'PENDING') sBadge.className += 'bg-amber-50 text-amber-600 border border-amber-100';
-            else if(status === 'RESOLVED') sBadge.className += 'bg-green-50 text-green-600 border border-green-100';
-            else sBadge.className += 'bg-slate-100 text-slate-400 border border-slate-200';
+            document.getElementById('drawer-agent-initials').className = `w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${currentAgentBg}`;
 
             // Load chat for this specific ticket
             currentTicketKey = ticketId;
@@ -740,6 +804,20 @@
 
         function closeDrawer() {
             document.getElementById('ticket-drawer').classList.add('translate-x-full');
+        }
+
+        // FIX: implementations for the quick-action buttons in the drawer footer
+        function quickSetStatus(status) {
+            if (!currentTicketKey) return;
+            setTicketStatus(currentTicketKey, status);
+            document.getElementById('ticket-edit-form').requestSubmit();
+        }
+
+        function deleteCurrentTicket() {
+            if (!currentTicketKey) return;
+            if (confirm('Sigurado ka bang gusto mong i-delete ang ticket na ito?')) {
+                document.getElementById('ticket-delete-form').submit();
+            }
         }
 
         // New Ticket Modal Actions
@@ -829,14 +907,16 @@
             }
         });
 
-        // Enter to send, Shift+Enter for newline
+        // FIX: Enter to send chat message (previously referenced a non-existent
+        // 'chat-reply-form' which would throw an error). Now directly calls
+        // sendChatMessage with a synthetic event.
         document.addEventListener('DOMContentLoaded', function() {
             const chatInput = document.getElementById('chat-input');
             if (chatInput) {
                 chatInput.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        document.getElementById('chat-reply-form').requestSubmit();
+                        sendChatMessage(e);
                     }
                 });
             }

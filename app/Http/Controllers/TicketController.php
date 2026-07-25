@@ -14,57 +14,25 @@ class TicketController extends Controller
         //    Kasama na ang naka-assign na agent (relational, hindi na plain string)
         $tickets = Ticket::with('agentModel')->orderBy('created_at', 'desc')->get();
 
-        // 2. Dynamic na kalkulasyon ng metrics base sa data sa database
-        //    (naghahambing ng linggong ito kumpara sa nakaraang linggo)
-        $thisWeekStart = now()->startOfWeek();
-        $thisWeekEnd = now()->endOfWeek();
-        $lastWeekStart = now()->subWeek()->startOfWeek();
-        $lastWeekEnd = now()->subWeek()->endOfWeek();
+        // 2. Metrics (nasa reusable helper na para magamit din ng adminIndex())
+        $metrics = $this->buildMetrics();
 
-        // Total Tickets: bilang ng tickets na ginawa this week vs last week
-        $totalThisWeek = Ticket::whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->count();
-        $totalLastWeek = Ticket::whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->count();
-
-        // Open Tickets: bilang ng OPEN tickets na ginawa this week vs last week
-        $openThisWeek = Ticket::where('status', 'OPEN')->whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->count();
-        $openLastWeek = Ticket::where('status', 'OPEN')->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->count();
-
-        // Closed Tickets: bilang ng CLOSED tickets na na-update this week vs last week
-        $closedThisWeek = Ticket::where('status', 'CLOSED')->whereBetween('updated_at', [$thisWeekStart, $thisWeekEnd])->count();
-        $closedLastWeek = Ticket::where('status', 'CLOSED')->whereBetween('updated_at', [$lastWeekStart, $lastWeekEnd])->count();
-
-        // Avg Response Time: this week vs last week (base sa tickets na ginawa nung panahong 'yon)
-        $avgThisWeek = Ticket::whereNotNull('response_minutes')->whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->avg('response_minutes') ?? 0;
-        $avgLastWeek = Ticket::whereNotNull('response_minutes')->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->avg('response_minutes') ?? 0;
-
-        $metrics = [
-            [
-                'label' => 'Total Tickets',
-                'value' => number_format(Ticket::count()),
-                'change' => $this->formatChange($totalThisWeek, $totalLastWeek),
-            ],
-            [
-                'label' => 'Open Tickets',
-                'value' => number_format(Ticket::where('status', 'OPEN')->count()),
-                'change' => $this->formatChange($openThisWeek, $openLastWeek),
-            ],
-            [
-                'label' => 'Closed Tickets',
-                'value' => number_format(Ticket::where('status', 'CLOSED')->count()),
-                'change' => $this->formatChange($closedThisWeek, $closedLastWeek),
-            ],
-            [
-                'label' => 'Avg Response Time',
-                'value' => ((int) round(Ticket::whereNotNull('response_minutes')->avg('response_minutes') ?? 0)) . 'm',
-                'change' => $this->formatChange($avgThisWeek, $avgLastWeek),
-            ],
-        ];
-
-        // 4. Kukunin ang listahan ng agents para sa "Assigned Agent" dropdown
+        // 3. Kukunin ang listahan ng agents para sa "Assigned Agent" dropdown
         $agents = Agent::orderBy('name')->get();
 
-        // 5. Ipapasa ang mga nakuha nating data sa blade view natin
+        // 4. Ipapasa ang mga nakuha nating data sa blade view natin
         return view('Ticketmanagement', compact('tickets', 'metrics', 'agents'));
+    }
+
+    // Ito ang Admin View — parehong data lang sa index(), pero ipapadala
+    // sa admin-ticket-management blade (may edit-all + reply-as-agent).
+    public function adminIndex()
+    {
+        $tickets = Ticket::with('agentModel')->orderBy('created_at', 'desc')->get();
+        $metrics = $this->buildMetrics();
+        $agents  = Agent::orderBy('name')->get();
+
+        return view('admin-ticket-management', compact('tickets', 'metrics', 'agents'));
     }
 
     // Ito ang bagong method para i-save ang bagong ticket sa database
@@ -146,6 +114,56 @@ class TicketController extends Controller
             });
 
         return view('Ticket-Analytics', compact('statusCounts', 'priorityCounts', 'agentCounts'));
+    }
+
+    // Helper: kinukwenta ang metrics cards (Total/Open/Closed/Avg Response)
+    // Ginawang sariling method ito para reusable sa index() at adminIndex(),
+    // hindi na kailangang kopyahin ang code nang dalawang beses.
+    private function buildMetrics()
+    {
+        $thisWeekStart = now()->startOfWeek();
+        $thisWeekEnd = now()->endOfWeek();
+        $lastWeekStart = now()->subWeek()->startOfWeek();
+        $lastWeekEnd = now()->subWeek()->endOfWeek();
+
+        // Total Tickets: bilang ng tickets na ginawa this week vs last week
+        $totalThisWeek = Ticket::whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->count();
+        $totalLastWeek = Ticket::whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->count();
+
+        // Open Tickets: bilang ng OPEN tickets na ginawa this week vs last week
+        $openThisWeek = Ticket::where('status', 'OPEN')->whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->count();
+        $openLastWeek = Ticket::where('status', 'OPEN')->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->count();
+
+        // Closed Tickets: bilang ng CLOSED tickets na na-update this week vs last week
+        $closedThisWeek = Ticket::where('status', 'CLOSED')->whereBetween('updated_at', [$thisWeekStart, $thisWeekEnd])->count();
+        $closedLastWeek = Ticket::where('status', 'CLOSED')->whereBetween('updated_at', [$lastWeekStart, $lastWeekEnd])->count();
+
+        // Avg Response Time: this week vs last week (base sa tickets na ginawa nung panahong 'yon)
+        $avgThisWeek = Ticket::whereNotNull('response_minutes')->whereBetween('created_at', [$thisWeekStart, $thisWeekEnd])->avg('response_minutes') ?? 0;
+        $avgLastWeek = Ticket::whereNotNull('response_minutes')->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->avg('response_minutes') ?? 0;
+
+        return [
+            [
+                'label' => 'Total Tickets',
+                'value' => number_format(Ticket::count()),
+                'change' => $this->formatChange($totalThisWeek, $totalLastWeek),
+            ],
+            [
+                'label' => 'Open Tickets',
+                'value' => number_format(Ticket::where('status', 'OPEN')->count()),
+                'change' => $this->formatChange($openThisWeek, $openLastWeek),
+            ],
+            [
+                'label' => 'Closed Tickets',
+                'value' => number_format(Ticket::where('status', 'CLOSED')->count()),
+                'change' => $this->formatChange($closedThisWeek, $closedLastWeek),
+            ],
+            [
+                'label' => 'Avg Response Time',
+                'value' => ((int) round(Ticket::whereNotNull('response_minutes')->avg('response_minutes') ?? 0)) . 'm',
+                'change' => $this->formatChange($avgThisWeek, $avgLastWeek),
+            ],
+        ];
     }
 
     // Helper: kinukwenta ang % pagbabago sa pagitan ng dalawang bilang

@@ -65,14 +65,14 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
         Route::get('/articles', [ArticleController::class, 'index']);
         Route::post('/articles', [ArticleController::class, 'store']);
         Route::patch('/articles/{article}/rate', [ArticleController::class, 'rate']);
-        
+
         Route::get('/refund-requests', [RefundRequestController::class, 'index']);
         Route::post('/refund-requests', [RefundRequestController::class, 'store']);
-        
+
 
     });
 
-    // Ticket Management
+    // Ticket Management (User / Agent-facing view)
     Route::prefix('ticket-management')->group(function () {
 
         Route::get('/', [TicketController::class, 'index'])->name('ticketmanagement');
@@ -80,6 +80,18 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
         Route::post('/', [TicketController::class, 'store'])->name('tickets.store');
         Route::put('/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
         Route::delete('/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+
+        // Admin View (full edit access: status, priority, category, assigned agent)
+        // Requires an 'admin' Gate/ability to be defined, e.g. in AuthServiceProvider:
+        //   Gate::define('admin', fn ($user) => $user->role === 'admin');
+        Route::get('/admin', [TicketController::class, 'adminIndex'])
+            ->name('tickets.admin')
+            ->middleware('can:admin');
+
+        // Optional: dedicated endpoint for admins to reply/patch a ticket's chat + fields
+        // Route::post('/admin/{ticket}/reply', [TicketController::class, 'adminReply'])
+        //     ->name('tickets.admin.reply')
+        //     ->middleware('can:admin');
 
     });
 
@@ -106,5 +118,6 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
 
     Route::get('/dashboard-history', [CommunicationController::class, 'dashboardHistory'])
         ->name('dashboard.history');
+
 
 });
