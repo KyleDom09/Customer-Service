@@ -34,9 +34,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
-                        @if(count($tickets) > 0)
-                            <span id="notif-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ count($tickets) }}</span>
-                        @endif
+                      <span id="notif-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center"></span>
                     </button>
 
                     <!-- Notifications Panel -->
@@ -47,7 +45,7 @@
                         </div>
                         <div class="overflow-y-auto flex-1">
                             @forelse($tickets as $ticket)
-                                <div class="px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50/70 transition flex items-start gap-2.5">
+                                <div data-notif-id="{{ $ticket->id }}" onclick="openTicketFromNotif({{ $ticket->id }})" class="px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50/70 transition flex items-start gap-2.5 cursor-pointer">
                                     <div class="w-7 h-7 rounded-full {{ $ticket->avatar_bg }} flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                                         {{ $ticket->initials }}
                                     </div>
@@ -317,11 +315,11 @@
                         <div id="drawer-agent-initials" class="w-6 h-6 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-[10px] shrink-0">MC</div>
                         <select name="agent_id" id="drawer-agent-select" onchange="adminChangeAgent()" class="font-semibold text-slate-700 bg-transparent outline-none flex-1 cursor-pointer">
                             @foreach ($agents as $agentOption)
-                                <option value="{{ $agentOption->id }}" data-name="{{ $agentOption->name }}" data-initials="{{ $agentOption->initials ?? '' }}">{{ $agentOption->name }}</option>
+                                <option value="{{ $agentOption->id }}" data-name="{{ $agentOption->name }}" data-initials="{{ $agentOption->initials ?? '' }}" data-rating="{{ $agentOption->rating ?? '—' }}">{{ $agentOption->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <span class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0">⭐ 4.9</span>
+                    <span id="drawer-agent-rating" onclick="editAgentRating()" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0 cursor-pointer hover:bg-amber-100 transition" title="I-click para baguhin ang rating">⭐ —</span>
                 </div>
 
                 <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Details</p>
@@ -523,6 +521,49 @@
         // ==============================
         // CHAT / CONVERSATION SYSTEM
         // ==============================
+        // ==============================
+        // NOTIFICATION READ-TRACKING
+        // ==============================
+        const NOTIF_READ_KEY = 'notif_read_ticket_ids';
+
+        function getReadIds() {
+            try {
+                return JSON.parse(localStorage.getItem(NOTIF_READ_KEY)) || [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveReadIds(ids) {
+            localStorage.setItem(NOTIF_READ_KEY, JSON.stringify(ids));
+        }
+
+        function getAllNotifIds() {
+            return [...document.querySelectorAll('#notif-panel [data-notif-id]')]
+                .map(el => el.dataset.notifId);
+        }
+
+        function updateNotifBadge() {
+            const allIds = getAllNotifIds();
+            const readIds = getReadIds();
+            const unreadCount = allIds.filter(id => !readIds.includes(id)).length;
+
+            const badge = document.getElementById('notif-badge');
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function markAllNotifsAsRead() {
+            saveReadIds(getAllNotifIds());
+            updateNotifBadge();
+        }
+
+        document.addEventListener('DOMContentLoaded', updateNotifBadge);
+
         let currentTicketKey = null;
         let currentAgentName = 'Unassigned';
         let currentAgentInitials = '--';
@@ -624,15 +665,61 @@
             }
         }
 
+        async function editAgentRating() {
+            const select = document.getElementById('drawer-agent-select');
+            const selectedOption = select.options[select.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                alert('Pumili muna ng agent bago magtakda ng rating.');
+                return;
+            }
+
+            const currentRating = selectedOption.dataset.rating && selectedOption.dataset.rating !== '—'
+                ? selectedOption.dataset.rating
+                : '';
+
+            const input = prompt(`Ilagay ang bagong rating para kay ${selectedOption.dataset.name} (0.0 - 5.0):`, currentRating);
+            if (input === null) return; // cancelled
+
+            const newRating = parseFloat(input);
+            if (isNaN(newRating) || newRating < 0 || newRating > 5) {
+                alert('Invalid na rating. Maglagay ng numero sa pagitan ng 0.0 at 5.0.');
+                return;
+            }
+
+            const agentId = selectedOption.value;
+
+            try {
+                const res = await fetch(`/agents/${agentId}/rating`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ rating: newRating })
+                });
+
+                if (!res.ok) throw new Error('Failed to update rating');
+
+                // i-update ang dataset ng option para sumalamin agad sa UI
+                selectedOption.dataset.rating = newRating.toFixed(1);
+                document.getElementById('drawer-agent-rating').innerText = '⭐ ' + newRating.toFixed(1);
+            } catch (err) {
+                console.error(err);
+                alert('Hindi na-save ang rating. Subukan ulit.');
+            }
+        }
+
         function adminChangeAgent() {
             const select = document.getElementById('drawer-agent-select');
             const selectedOption = select.options[select.selectedIndex];
             const agentName = selectedOption.dataset.name;       // tamang pangalan na ngayon
             const initials = selectedOption.dataset.initials || '';
+            const rating = selectedOption.dataset.rating || '—';
 
             currentAgentName = agentName;
             currentAgentInitials = initials;
             document.getElementById('drawer-agent-initials').innerText = initials;
+            document.getElementById('drawer-agent-rating').innerText = '⭐ ' + rating;
 
             const row = document.querySelector(`.ticket-row[data-id="${currentTicketKey}"]`);
             if (row) {
@@ -758,6 +845,8 @@
             if ([...agentSelect.options].some(o => o.value === currentAgentName)) {
                 agentSelect.value = currentAgentName;
             }
+            const selectedAgentOption = agentSelect.options[agentSelect.selectedIndex];
+            document.getElementById('drawer-agent-rating').innerText = '⭐ ' + (selectedAgentOption?.dataset.rating || '—');
             document.getElementById('drawer-agent-initials').innerText = currentAgentInitials;
             document.getElementById('drawer-agent-initials').className = `w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${currentAgentBg}`;
 
@@ -851,11 +940,29 @@
         }
 
         // Notification Panel Actions
+        function openTicketFromNotif(ticketId) {
+            // isara muna ang notif panel
+            document.getElementById('notif-panel').classList.add('hidden');
+
+            // hanapin ang kaukulang row sa table at i-trigger ang click nito
+            // (para magamit ulit ang existing openDrawer logic, kasama na ang description mula sa row)
+            const row = document.querySelector(`.ticket-row[data-id="${ticketId}"]`);
+            if (row) {
+                row.click();
+            } else {
+                alert('Hindi mahanap ang ticket na ito sa kasalukuyang listahan (baka na-filter).');
+            }
+        }
+
         function toggleNotificationPanel(event) {
             event.stopPropagation();
             document.getElementById('profile-menu').classList.add('hidden');
             const panel = document.getElementById('notif-panel');
             panel.classList.toggle('hidden');
+
+            if (!panel.classList.contains('hidden')) {
+                markAllNotifsAsRead();
+            }
         }
 
         // Close profile menu / notif panel kapag nag-click sa labas nito
