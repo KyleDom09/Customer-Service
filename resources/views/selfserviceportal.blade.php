@@ -18,7 +18,6 @@
         newTitle: '',
         newProblem: '',
         newSolution: '',
-        isProfileOpen: false,
         isNotifOpen: false,
         isSearchOpen: false,
         isRefundFormOpen: false,
@@ -30,17 +29,60 @@
         refundImagePreview: '',
         refundImageFile: null,
         refundRequests: [],
-        notifications: [
-            { text: 'Welcome to the Self-Service Portal!', time: 'Just now', read: true }
-        ],
-        addNotification(text) {
-            this.notifications.unshift({ text: text, time: 'Just now', read: false });
+        notifications: [],
+        async fetchNotifications() {
+            try {
+                const res = await fetch('/customer-service/self-service/notifications');
+                const data = await res.json();
+                this.notifications = data.map(n => ({
+                    id: n.id,
+                    text: n.message,
+                    time: new Date(n.created_at).toLocaleString(),
+                    read: !!n.is_read
+                }));
+            } catch (e) {
+                console.error('Failed to load notifications', e);
+            }
+        },
+        async addNotification(text) {
+            try {
+                const res = await fetch('/customer-service/self-service/notifications', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': this.csrfToken(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+                if (!res.ok) throw new Error('Failed to save notification');
+                const saved = await res.json();
+                this.notifications.unshift({
+                    id: saved.id,
+                    text: saved.message,
+                    time: new Date(saved.created_at).toLocaleString(),
+                    read: false
+                });
+            } catch (e) {
+                console.error(e);
+            }
         },
         unreadCount() {
             return this.notifications.filter(n => !n.read).length;
         },
         markNotificationsRead() {
             this.notifications.forEach(n => n.read = true);
+        },
+        async clearAllNotifications() {
+            try {
+                const res = await fetch('/customer-service/self-service/notifications/mark-all-read', {
+                    method: 'PATCH',
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken() }
+                });
+                if (!res.ok) throw new Error('Failed to clear notifications');
+                this.notifications = [];
+            } catch (e) {
+                console.error(e);
+            }
         },
         csrfToken() {
             return document.querySelector('meta[name=csrf-token]').getAttribute('content');
@@ -289,6 +331,8 @@
             } catch (e) {
                 console.error('Failed to load refund requests', e);
             }
+
+            await this.fetchNotifications();
         },
         async addNewArticle() {
             if(this.newArticleTitle.trim() === '') return;
@@ -411,8 +455,16 @@
                         <div x-show="isNotifOpen" x-transition
                              class="absolute right-0 mt-3 w-80 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-20"
                              style="display: none;">
-                            <div class="px-4 py-3 border-b border-slate-100">
-                                <p class="text-sm font-bold text-blue-900">Notifications</p>
+                            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-bold text-blue-900">Notifications</p>
+                                    <p class="text-[11px] text-slate-400" x-text="unreadCount() + ' unread'"></p>
+                                </div>
+                                <button x-show="notifications.length > 0"
+                                        @click="clearAllNotifications()"
+                                        class="text-[11px] font-semibold text-blue-700 border border-blue-200 rounded-full px-3 py-1 hover:bg-blue-50 cursor-pointer">
+                                    Mark all read
+                                </button>
                             </div>
                             <div class="max-h-72 overflow-y-auto">
                                 <template x-for="(notif, index) in notifications" :key="index">
@@ -425,57 +477,15 @@
                                     </div>
                                 </template>
                                 <template x-if="notifications.length === 0">
-                                    <div class="px-4 py-6 text-center text-xs text-slate-400">No notifications yet</div>
+                                    <div class="px-4 py-6 text-center text-xs text-slate-400">No new notifications.</div>
                                 </template>
                             </div>
                         </div>
                     </div>
-                    <div class="relative border-l pl-4 border-slate-200" @click.outside="isProfileOpen = false">
-                        <button @click="isProfileOpen = !isProfileOpen" class="flex items-center space-x-2 cursor-pointer">
+                    <div class="relative border-l pl-4 border-slate-200">
+                        <div class="flex items-center space-x-2">
                             <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=dbeafe&color=1e3a8a" alt="{{ auth()->user()->name }}" class="w-8 h-8 rounded-full">
                             <span class="text-sm font-medium text-slate-700">{{ auth()->user()->name }}</span>
-                            <i class="fas fa-chevron-down text-xs text-slate-400 transition" :class="isProfileOpen ? 'rotate-180' : ''"></i>
-                        </button>
-
-                        <div x-show="isProfileOpen" x-transition
-                             class="absolute right-0 mt-3 w-64 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-20"
-                             style="display: none;">
-                            <div class="p-4 flex items-center space-x-3 border-b border-slate-100">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=dbeafe&color=1e3a8a" alt="{{ auth()->user()->name }}" class="w-10 h-10 rounded-full">
-                                <div>
-                                    <p class="text-sm font-bold text-blue-900">{{ auth()->user()->name }}</p>
-                                    <p class="text-xs text-slate-400">{{ auth()->user()->email }}</p>
-                                </div>
-                                <span class="ml-auto flex items-center space-x-1 text-[11px] text-emerald-600 font-semibold">
-                                    <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                                    <span>Online</span>
-                                </span>
-                            </div>
-                            <div class="p-4 grid grid-cols-2 gap-3 text-center">
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">30</p>
-                                    <p class="text-[10px] text-slate-400">Total Assigned</p>
-                                </div>
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">17</p>
-                                    <p class="text-[10px] text-slate-400">Total Resolved</p>
-                                </div>
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">32m</p>
-                                    <p class="text-[10px] text-slate-400">Avg. Response</p>
-                                </div>
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">3.9/5.0</p>
-                                    <p class="text-[10px] text-slate-400">CSAT Score</p>
-                                </div>
-                            </div>
-                            <form method="POST" action="{{ route('logout') }}" class="border-t border-slate-100">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                    Log out
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </div>

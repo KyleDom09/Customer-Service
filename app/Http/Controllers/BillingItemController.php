@@ -47,9 +47,14 @@ class BillingItemController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'problem' => 'nullable|string',
+            'steps' => 'nullable|array',
         ]);
 
-        $billingItem->update($validated);
+        $billingItem->update([
+            'title' => $validated['title'],
+            'problem' => $validated['problem'] ?? '',
+            'steps' => $validated['steps'] ?? $billingItem->steps,
+        ]);
 
         return response()->json($billingItem);
     }

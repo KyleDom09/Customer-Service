@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\RefundRequestController;
 use App\Http\Controllers\SelfServiceController;
+use App\Http\Controllers\SelfserviceNotificationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -96,6 +97,10 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
         Route::put('/articles/{article}', [ArticleController::class, 'update'])->middleware('can:admin');
         Route::delete('/articles/{article}', [ArticleController::class, 'destroy'])->middleware('can:admin');
 
+        Route::get('/notifications', [SelfserviceNotificationController::class, 'index']);
+        Route::post('/notifications', [SelfserviceNotificationController::class, 'store']);
+        Route::patch('/notifications/mark-all-read', [SelfserviceNotificationController::class, 'markAllRead']);
+
         // Iisang URL din para sa refund requests — data returned depende sa role
         Route::get('/refund-requests', [RefundRequestController::class, 'index']);
         Route::post('/refund-requests', [RefundRequestController::class, 'store']);
@@ -108,6 +113,7 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
             Route::patch('/refund-requests/{refundRequest}/reject', [RefundRequestController::class, 'reject']);
             Route::delete('/refund-requests/{refundRequest}/admin', [RefundRequestController::class, 'adminDestroy']);
         });
+
 
     });
 

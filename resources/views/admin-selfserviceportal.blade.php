@@ -30,17 +30,60 @@
         refundImagePreview: '',
         refundImageFile: null,
         refundRequests: [],
-        notifications: [
-            { text: 'Welcome to the Self-Service Portal!', time: 'Just now', read: true }
-        ],
-        addNotification(text) {
-            this.notifications.unshift({ text: text, time: 'Just now', read: false });
+        notifications: [],
+        async fetchNotifications() {
+            try {
+                const res = await fetch('/customer-service/self-service/notifications');
+                const data = await res.json();
+                this.notifications = data.map(n => ({
+                    id: n.id,
+                    text: n.message,
+                    time: new Date(n.created_at).toLocaleString(),
+                    read: !!n.is_read
+                }));
+            } catch (e) {
+                console.error('Failed to load notifications', e);
+            }
+        },
+        async addNotification(text) {
+            try {
+                const res = await fetch('/customer-service/self-service/notifications', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': this.csrfToken(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+                if (!res.ok) throw new Error('Failed to save notification');
+                const saved = await res.json();
+                this.notifications.unshift({
+                    id: saved.id,
+                    text: saved.message,
+                    time: new Date(saved.created_at).toLocaleString(),
+                    read: false
+                });
+            } catch (e) {
+                console.error(e);
+            }
         },
         unreadCount() {
             return this.notifications.filter(n => !n.read).length;
         },
         markNotificationsRead() {
             this.notifications.forEach(n => n.read = true);
+        },
+        async clearAllNotifications() {
+            try {
+                const res = await fetch('/customer-service/self-service/notifications/mark-all-read', {
+                    method: 'PATCH',
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken() }
+                });
+                if (!res.ok) throw new Error('Failed to clear notifications');
+                this.notifications = [];
+            } catch (e) {
+                console.error(e);
+            }
         },
         csrfToken() {
             return document.querySelector('meta[name=csrf-token]').getAttribute('content');
@@ -221,28 +264,32 @@
         editingBillingId: null,
         editBillingTitle: '',
         editBillingProblem: '',
+        editBillingSteps: '',
         startEditBilling(item) {
             this.editingBillingId = item.id;
             this.editBillingTitle = item.title;
             this.editBillingProblem = item.problem;
+            this.editBillingSteps = Array.isArray(item.steps) ? item.steps.join('\n') : '';
         },
         cancelEditBilling() {
             this.editingBillingId = null;
         },
         async saveEditBilling(item) {
             try {
+                const stepsArray = this.editBillingSteps.split('\n').map(s => s.trim()).filter(s => s !== '');
                 const res = await fetch('/customer-service/self-service/billing-items/' + item.id, {
                     method: 'PUT',
                     headers: {
                         'X-CSRF-TOKEN': this.csrfToken(),
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ title: this.editBillingTitle, problem: this.editBillingProblem })
+                    body: JSON.stringify({ title: this.editBillingTitle, problem: this.editBillingProblem, steps: stepsArray })
                 });
                 if (!res.ok) throw new Error('Failed to update');
                 const updated = await res.json();
                 item.title = updated.title;
                 item.problem = updated.problem;
+                item.steps = updated.steps;
                 this.editingBillingId = null;
             } catch (e) {
                 console.error(e);
@@ -436,6 +483,8 @@
             } catch (e) {
                 console.error('Failed to load refund requests', e);
             }
+
+            await this.fetchNotifications();
         },
         async addNewArticle() {
             if(this.newArticleTitle.trim() === '') return;
@@ -540,8 +589,16 @@
                         <div x-show="isNotifOpen" x-transition
                              class="absolute right-0 mt-3 w-80 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-20"
                              style="display: none;">
-                            <div class="px-4 py-3 border-b border-slate-100">
-                                <p class="text-sm font-bold text-blue-900">Notifications</p>
+                            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-bold text-blue-900">Notifications</p>
+                                    <p class="text-[11px] text-slate-400" x-text="unreadCount() + ' unread'"></p>
+                                </div>
+                                <button x-show="notifications.length > 0"
+                                        @click="clearAllNotifications()"
+                                        class="text-[11px] font-semibold text-blue-700 border border-blue-200 rounded-full px-3 py-1 hover:bg-blue-50 cursor-pointer">
+                                    Mark all read
+                                </button>
                             </div>
                             <div class="max-h-72 overflow-y-auto">
                                 <template x-for="(notif, index) in notifications" :key="index">
@@ -554,7 +611,7 @@
                                     </div>
                                 </template>
                                 <template x-if="notifications.length === 0">
-                                    <div class="px-4 py-6 text-center text-xs text-slate-400">No notifications yet</div>
+                                    <div class="px-4 py-6 text-center text-xs text-slate-400">No new notifications.</div>
                                 </template>
                             </div>
                         </div>
@@ -579,24 +636,6 @@
                                     <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
                                     <span>Online</span>
                                 </span>
-                            </div>
-                            <div class="p-4 grid grid-cols-2 gap-3 text-center">
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">30</p>
-                                    <p class="text-[10px] text-slate-400">Total Assigned</p>
-                                </div>
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">17</p>
-                                    <p class="text-[10px] text-slate-400">Total Resolved</p>
-                                </div>
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">32m</p>
-                                    <p class="text-[10px] text-slate-400">Avg. Response</p>
-                                </div>
-                                <div class="bg-slate-50 rounded-lg py-2">
-                                    <p class="text-sm font-bold text-blue-900">3.9/5.0</p>
-                                    <p class="text-[10px] text-slate-400">CSAT Score</p>
-                                </div>
                             </div>
                             <form method="POST" action="{{ route('logout') }}" class="border-t border-slate-100">
                                 @csrf
@@ -736,17 +775,21 @@
                                                     <input type="text" x-model="editBillingTitle" class="w-full px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500">
                                                     <label class="block text-[10px] font-semibold text-slate-500 uppercase pt-1">Problem</label>
                                                     <textarea x-model="editBillingProblem" rows="2" class="w-full px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
+                                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase pt-1">Step-by-Step Solution (one step per line)</label>
+                                                    <textarea x-model="editBillingSteps" rows="4" placeholder="Step 1...&#10;Step 2...&#10;Step 3..." class="w-full px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
                                                 </div>
                                             </template>
-                                            <div class="text-xs text-slate-500 space-y-1 pt-1 pl-4">
-                                                <p class="font-semibold text-slate-700 mb-1">Step-by-Step Solution:</p>
-                                                <template x-for="(step, sIdx) in item.steps" :key="sIdx">
-                                                    <div class="flex space-x-1.5 py-0.5">
-                                                        <span class="text-slate-400" x-text="(sIdx + 1) + '.'"></span>
-                                                        <span x-text="step" class="text-slate-600"></span>
-                                                    </div>
-                                                </template>
-                                            </div>
+                                            <template x-if="editingBillingId !== item.id">
+                                                <div class="text-xs text-slate-500 space-y-1 pt-1 pl-4">
+                                                    <p class="font-semibold text-slate-700 mb-1">Step-by-Step Solution:</p>
+                                                    <template x-for="(step, sIdx) in item.steps" :key="sIdx">
+                                                        <div class="flex space-x-1.5 py-0.5">
+                                                            <span class="text-slate-400" x-text="(sIdx + 1) + '.'"></span>
+                                                            <span x-text="step" class="text-slate-600"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
                                             <div class="flex items-center space-x-1.5 pt-2 text-xs">
                                                 <span class="text-slate-400 mr-1">Was this helpful?</span>
                                                 <template x-for="star in [1,2,3,4,5]" :key="star">
