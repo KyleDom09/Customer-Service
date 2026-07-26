@@ -65,6 +65,7 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
         Route::get('/agents', [AgentController::class, 'index']);
         Route::post('/agents', [AgentController::class, 'store'])->name('agents.store');
         Route::put('/agents/{agent}', [AgentController::class, 'update']);
+        Route::patch('/agents/{agent}/rating', [AgentController::class, 'updateRating'])->name('agents.updateRating');
         Route::delete('/agents/{agent}', [AgentController::class, 'destroy']);
 
         // Activity Logs
