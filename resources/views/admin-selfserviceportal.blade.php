@@ -122,24 +122,7 @@
             this.resetRefundForm();
         },
         async deleteRefundRequest(id) {
-            if (!confirm('Are you sure you want to cancel this return request?')) return;
-
-            try {
-                const response = await fetch('/customer-service/self-service/refund-requests/' + id, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': this.csrfToken()
-                    }
-                });
-
-                if (!response.ok) throw new Error('Failed to delete refund request');
-
-                this.refundRequests = this.refundRequests.filter(r => r.id !== id);
-                this.addNotification('Return request cancelled.');
-            } catch (e) {
-                console.error('Failed to delete refund request', e);
-                alert('Something went wrong. Please try again.');
-            }
+            this.openDeleteModal('refund-cancel', id, 'this return request');
         },
         refundStatusFilter: 'all',
         get filteredRefundRequests() {
@@ -176,39 +159,77 @@
                 alert('Something went wrong while rejecting.');
             }
         },
-        async adminDeleteRefundRequest(id) {
-            if (!confirm('Delete this refund request permanently?')) return;
+        async adminDeleteRefundRequest(id, title) {
+            this.openDeleteModal('refund-admin', id, title ? ('"' + title + '"') : 'this refund request');
+        },
+
+        // ===== Shared delete confirmation modal =====
+        deleteModal: {
+            open: false,
+            type: null,   // 'refund-cancel' | 'refund-admin' | 'billing' | 'article'
+            id: null,
+            label: ''
+        },
+        openDeleteModal(type, id, label) {
+            this.deleteModal = { open: true, type, id, label };
+        },
+        closeDeleteModal() {
+            this.deleteModal = { open: false, type: null, id: null, label: '' };
+        },
+        async confirmDeleteModal() {
+            const { type, id } = this.deleteModal;
             try {
-                const res = await fetch('/customer-service/self-service/refund-requests/' + id + '/admin', {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': this.csrfToken() }
-                });
-                if (!res.ok) throw new Error('Failed to delete');
-                this.refundRequests = this.refundRequests.filter(r => r.id !== id);
+                if (type === 'refund-cancel') {
+                    const res = await fetch('/customer-service/self-service/refund-requests/' + id, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': this.csrfToken() }
+                    });
+                    if (!res.ok) throw new Error('Failed to delete refund request');
+                    this.refundRequests = this.refundRequests.filter(r => r.id !== id);
+                    this.addNotification('Return request cancelled.');
+                } else if (type === 'refund-admin') {
+                    const res = await fetch('/customer-service/self-service/refund-requests/' + id + '/admin', {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': this.csrfToken() }
+                    });
+                    if (!res.ok) throw new Error('Failed to delete refund request');
+                    this.refundRequests = this.refundRequests.filter(r => r.id !== id);
+                } else if (type === 'billing') {
+                    const res = await fetch('/customer-service/self-service/billing-items/' + id, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': this.csrfToken() }
+                    });
+                    if (!res.ok) throw new Error('Failed to delete billing item');
+                    this.billingItems = this.billingItems.filter(i => i.id !== id);
+                } else if (type === 'article') {
+                    const res = await fetch('/customer-service/self-service/articles/' + id, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': this.csrfToken() }
+                    });
+                    if (!res.ok) throw new Error('Failed to delete article');
+                    this.articleItems = this.articleItems.filter(a => a.id !== id);
+                }
             } catch (e) {
                 console.error(e);
                 alert('Something went wrong while deleting.');
+            } finally {
+                this.closeDeleteModal();
             }
         },
-        async deleteBillingItem(item) {
-            if (!confirm('Delete &quot;' + item.title + '&quot;?')) return;
-            try {
-                const res = await fetch('/customer-service/self-service/billing-items/' + item.id, {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': this.csrfToken() }
-                });
-                if (!res.ok) throw new Error('Failed to delete');
-                this.billingItems = this.billingItems.filter(i => i.id !== item.id);
-            } catch (e) {
-                console.error(e);
-                alert('Something went wrong while deleting.');
-            }
+
+        // ===== Billing items: inline edit =====
+        editingBillingId: null,
+        editBillingTitle: '',
+        editBillingProblem: '',
+        startEditBilling(item) {
+            this.editingBillingId = item.id;
+            this.editBillingTitle = item.title;
+            this.editBillingProblem = item.problem;
         },
-        async editBillingItem(item) {
-            const newTitle = prompt('Edit title:', item.title);
-            if (newTitle === null) return;
-            const newProblem = prompt('Edit problem description:', item.problem);
-            if (newProblem === null) return;
+        cancelEditBilling() {
+            this.editingBillingId = null;
+        },
+        async saveEditBilling(item) {
             try {
                 const res = await fetch('/customer-service/self-service/billing-items/' + item.id, {
                     method: 'PUT',
@@ -216,36 +237,35 @@
                         'X-CSRF-TOKEN': this.csrfToken(),
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ title: newTitle, problem: newProblem })
+                    body: JSON.stringify({ title: this.editBillingTitle, problem: this.editBillingProblem })
                 });
                 if (!res.ok) throw new Error('Failed to update');
                 const updated = await res.json();
                 item.title = updated.title;
                 item.problem = updated.problem;
+                this.editingBillingId = null;
             } catch (e) {
                 console.error(e);
                 alert('Something went wrong while updating.');
             }
         },
-        async deleteArticle(article) {
-            if (!confirm('Delete &quot;' + article.title + '&quot;?')) return;
-            try {
-                const res = await fetch('/customer-service/self-service/articles/' + article.id, {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': this.csrfToken() }
-                });
-                if (!res.ok) throw new Error('Failed to delete');
-                this.articleItems = this.articleItems.filter(a => a.id !== article.id);
-            } catch (e) {
-                console.error(e);
-                alert('Something went wrong while deleting.');
-            }
+        deleteBillingItem(item) {
+            this.openDeleteModal('billing', item.id, '"' + item.title + '"');
         },
-        async editArticle(article) {
-            const newTitle = prompt('Edit title:', article.title);
-            if (newTitle === null) return;
-            const newDescription = prompt('Edit content:', article.description);
-            if (newDescription === null) return;
+
+        // ===== Articles: inline edit =====
+        editingArticleId: null,
+        editArticleTitle: '',
+        editArticleDescription: '',
+        startEditArticle(article) {
+            this.editingArticleId = article.id;
+            this.editArticleTitle = article.title;
+            this.editArticleDescription = article.description;
+        },
+        cancelEditArticle() {
+            this.editingArticleId = null;
+        },
+        async saveEditArticle(article) {
             try {
                 const res = await fetch('/customer-service/self-service/articles/' + article.id, {
                     method: 'PUT',
@@ -253,16 +273,20 @@
                         'X-CSRF-TOKEN': this.csrfToken(),
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ title: newTitle, description: newDescription })
+                    body: JSON.stringify({ title: this.editArticleTitle, description: this.editArticleDescription })
                 });
                 if (!res.ok) throw new Error('Failed to update');
                 const updated = await res.json();
                 article.title = updated.title;
                 article.description = updated.description;
+                this.editingArticleId = null;
             } catch (e) {
                 console.error(e);
                 alert('Something went wrong while updating.');
             }
+        },
+        deleteArticle(article) {
+            this.openDeleteModal('article', article.id, '"' + article.title + '"');
         },
         async rateItem(item, stars) {
             item.rating = stars;
@@ -677,21 +701,43 @@
                             <template x-for="(item, index) in billingItems" :key="index">
                                 <div class="bg-slate-50 p-6 rounded-xl border border-slate-100 relative">
                                     <div class="absolute top-4 right-4 flex items-center space-x-2 text-xs font-semibold">
-                                        <button @click="editBillingItem(item)" class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition cursor-pointer">Edit</button>
-                                        <button @click="deleteBillingItem(item)" class="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition cursor-pointer">Delete</button>
+                                        <template x-if="editingBillingId !== item.id">
+                                            <div class="flex items-center space-x-2">
+                                                <button @click="startEditBilling(item)" class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition cursor-pointer">Edit</button>
+                                                <button @click="deleteBillingItem(item)" class="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition cursor-pointer">Delete</button>
+                                            </div>
+                                        </template>
+                                        <template x-if="editingBillingId === item.id">
+                                            <div class="flex items-center space-x-2">
+                                                <button @click="saveEditBilling(item)" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition cursor-pointer">Save</button>
+                                                <button @click="cancelEditBilling()" class="px-2.5 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">Cancel</button>
+                                            </div>
+                                        </template>
                                     </div>
                                     <div class="flex items-start space-x-4">
                                         <div class="bg-blue-50 text-blue-600 p-3 rounded-xl flex items-center justify-center">
                                             <i :class="'fas ' + item.icon"></i>
                                         </div>
                                         <div class="flex-1 space-y-2">
-                                            <div class="flex items-center space-x-2">
-                                                <h4 class="font-bold text-blue-900 text-md" x-text="item.title"></h4>
-                                                <template x-if="item.isNew">
-                                                    <span class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">Newly Added</span>
-                                                </template>
-                                            </div>
-                                            <p class="text-xs text-slate-500 font-medium">Problem: <span class="italic text-slate-600" x-text="'&ldquo;' + item.problem + '&rdquo;'"></span></p>
+                                            <template x-if="editingBillingId !== item.id">
+                                                <div class="space-y-2">
+                                                    <div class="flex items-center space-x-2">
+                                                        <h4 class="font-bold text-blue-900 text-md" x-text="item.title"></h4>
+                                                        <template x-if="item.isNew">
+                                                            <span class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">Newly Added</span>
+                                                        </template>
+                                                    </div>
+                                                    <p class="text-xs text-slate-500 font-medium">Problem: <span class="italic text-slate-600" x-text="'&ldquo;' + item.problem + '&rdquo;'"></span></p>
+                                                </div>
+                                            </template>
+                                            <template x-if="editingBillingId === item.id">
+                                                <div class="space-y-2 pr-24">
+                                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Title</label>
+                                                    <input type="text" x-model="editBillingTitle" class="w-full px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase pt-1">Problem</label>
+                                                    <textarea x-model="editBillingProblem" rows="2" class="w-full px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
+                                                </div>
+                                            </template>
                                             <div class="text-xs text-slate-500 space-y-1 pt-1 pl-4">
                                                 <p class="font-semibold text-slate-700 mb-1">Step-by-Step Solution:</p>
                                                 <template x-for="(step, sIdx) in item.steps" :key="sIdx">
@@ -971,7 +1017,7 @@
                                                             class="text-amber-600 hover:text-amber-800 hover:underline cursor-pointer">
                                                         Reject
                                                     </button>
-                                                    <button @click="adminDeleteRefundRequest(request.id)"
+                                                    <button @click="adminDeleteRefundRequest(request.id, request.title)"
                                                             class="text-rose-500 hover:text-rose-700 hover:underline cursor-pointer">
                                                         Delete
                                                     </button>
@@ -1002,13 +1048,25 @@
                             <template x-for="(article, index) in articleItems" :key="index">
                                 <div>
                                     <div class="flex items-start justify-between gap-3">
-                                        <h4 class="text-md font-bold text-emerald-600" x-text="article.title"></h4>
+                                        <h4 x-show="editingArticleId !== article.id" class="text-md font-bold text-emerald-600" x-text="article.title"></h4>
+                                        <input x-show="editingArticleId === article.id" type="text" x-model="editArticleTitle" class="flex-1 px-3 py-1.5 text-sm font-bold text-emerald-700 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500">
                                         <div class="flex items-center space-x-2 text-xs font-semibold shrink-0">
-                                            <button @click="editArticle(article)" class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition cursor-pointer">Edit</button>
-                                            <button @click="deleteArticle(article)" class="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition cursor-pointer">Delete</button>
+                                            <template x-if="editingArticleId !== article.id">
+                                                <div class="flex items-center space-x-2">
+                                                    <button @click="startEditArticle(article)" class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition cursor-pointer">Edit</button>
+                                                    <button @click="deleteArticle(article)" class="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition cursor-pointer">Delete</button>
+                                                </div>
+                                            </template>
+                                            <template x-if="editingArticleId === article.id">
+                                                <div class="flex items-center space-x-2">
+                                                    <button @click="saveEditArticle(article)" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition cursor-pointer">Save</button>
+                                                    <button @click="cancelEditArticle()" class="px-2.5 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">Cancel</button>
+                                                </div>
+                                            </template>
                                         </div>
                                     </div>
-                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed" x-text="article.description"></p>
+                                    <p x-show="editingArticleId !== article.id" class="text-xs text-slate-500 mt-1 leading-relaxed" x-text="article.description"></p>
+                                    <textarea x-show="editingArticleId === article.id" x-model="editArticleDescription" rows="3" class="w-full mt-2 px-3 py-1.5 text-xs border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
                                     <div class="flex items-center space-x-1.5 pt-2 text-xs">
                                         <span class="text-slate-400 mr-1">Was this helpful?</span>
                                         <template x-for="star in [1,2,3,4,5]" :key="star">
@@ -1176,6 +1234,32 @@
                 </button>
                 <button @click="addNewArticle()" class="px-4 py-2 bg-[#1e3a8a] hover:bg-blue-800 text-white rounded-lg transition shadow-xs cursor-pointer">
                     Save Article
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared delete confirmation modal -->
+    <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
+         x-show="deleteModal.open"
+         x-transition
+         style="display: none;">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-6 space-y-4 text-center">
+            <div class="mx-auto h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center">
+                <i class="fas fa-trash text-rose-600"></i>
+            </div>
+            <div>
+                <h3 class="text-md font-bold text-blue-950">Delete this item?</h3>
+                <p class="mt-1 text-xs text-slate-500">
+                    You're about to delete <span class="font-semibold" x-text="deleteModal.label"></span>. This cannot be undone.
+                </p>
+            </div>
+            <div class="flex items-center justify-center space-x-2 pt-2 text-xs font-semibold">
+                <button @click="closeDeleteModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition cursor-pointer">
+                    Cancel
+                </button>
+                <button @click="confirmDeleteModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition shadow-xs cursor-pointer">
+                    Delete
                 </button>
             </div>
         </div>
