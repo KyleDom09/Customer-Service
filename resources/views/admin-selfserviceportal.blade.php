@@ -160,7 +160,7 @@
             }
         },
         async adminDeleteRefundRequest(id, title) {
-            this.openDeleteModal('refund-admin', id, title ? ('"' + title + '"') : 'this refund request');
+            this.openDeleteModal('refund-admin', id, title ? ('&quot;' + title + '&quot;') : 'this refund request');
         },
 
         // ===== Shared delete confirmation modal =====
@@ -250,7 +250,7 @@
             }
         },
         deleteBillingItem(item) {
-            this.openDeleteModal('billing', item.id, '"' + item.title + '"');
+            this.openDeleteModal('billing', item.id, '&quot;' + item.title + '&quot;');
         },
 
         // ===== Articles: inline edit =====
@@ -286,7 +286,7 @@
             }
         },
         deleteArticle(article) {
-            this.openDeleteModal('article', article.id, '"' + article.title + '"');
+            this.openDeleteModal('article', article.id, '&quot;' + article.title + '&quot;');
         },
         async rateItem(item, stars) {
             item.rating = stars;
