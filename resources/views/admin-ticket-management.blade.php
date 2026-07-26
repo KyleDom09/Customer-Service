@@ -172,9 +172,10 @@
                         <tbody class="text-xs divide-y divide-slate-100 text-slate-600">
                             @foreach($tickets as $ticket)
                             <tr data-status="{{ $ticket->status }}"
+                                data-description="{{ $ticket->description }}"
                                 data-search="{{ strtolower($ticket->customer_name . ' ' . $ticket->customer_email . ' ' . $ticket->subject . ' TK-' . str_pad($ticket->id, 4, '0', STR_PAD_LEFT) . ' ' . $ticket->category) }}"
                                 data-id="{{ $ticket->id }}"
-                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}', {{ $ticket->id }}, '{{ $ticket->agent }}', '{{ $ticket->agent_initials }}', '{{ $ticket->agent_bg }}')"
+                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}', {{ $ticket->id }}, '{{ $ticket->agent }}', '{{ $ticket->agent_initials }}', '{{ $ticket->agent_bg }}', this)"
                                 class="ticket-row hover:bg-slate-50/50 transition-colors cursor-pointer">
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center gap-2.5">
@@ -294,7 +295,7 @@
                 <input type="text" name="subject" id="drawer-subject-input" class="w-full text-xs font-semibold text-slate-800 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100 outline-none focus:border-blue-500 transition">
 
                 <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-4 mb-1">Description</p>
-                <textarea name="description" id="drawer-subject-desc" rows="3" class="w-full text-xs text-slate-600 leading-relaxed bg-slate-50/50 p-2.5 rounded-lg border border-slate-100 outline-none focus:border-blue-500 transition resize-none">User is unable to login to their account. Error appears after entering credentials. Issue started after the recent system update.</textarea>
+                <textarea name="description" id="drawer-subject-desc" rows="3" class="w-full text-xs text-slate-600 leading-relaxed bg-slate-50/50 p-2.5 rounded-lg border border-slate-100 outline-none focus:border-blue-500 transition resize-none"></textarea>
 
                 <!-- LIVE CHAT / CONVERSATION -->
                 <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Conversation</p>
@@ -553,6 +554,12 @@
 
             input.value = '';
             loadMessages(currentTicketKey);
+
+            // Update the status badge locally to match what the backend just set
+            const currentStatus = document.getElementById('drawer-status').value;
+            if (currentStatus === 'OPEN' || currentStatus === 'PENDING') {
+                setTicketStatus(currentTicketKey, 'IN PROGRESS');
+            }
         }
 
         function renderChatMessages(messages) {
@@ -706,7 +713,7 @@
         }
 
         // Ticket Detail Drawer Actions
-        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId, agentName, agentInitials, agentBg) {
+        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId, agentName, agentInitials, agentBg, rowEl) {
             // FIX: set the form actions dynamically based on the ticket being opened
             var baseUrl = "{{ url('/customer-service/ticket-management') }}";
             document.getElementById('ticket-edit-form').action = baseUrl + '/' + ticketId;
@@ -716,6 +723,7 @@
             document.getElementById('drawer-name').innerText = name;
             document.getElementById('drawer-email').innerText = email;
             document.getElementById('drawer-initials').innerText = initials;
+            document.getElementById('drawer-subject-desc').value = rowEl ? rowEl.dataset.description : '';
             document.getElementById('drawer-initials').className = `w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${avatarBg}`;
 
             // Keep hidden fields in sync so the update request has customer_name/email too
