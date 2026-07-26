@@ -12,6 +12,7 @@ use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\RefundRequestController;
+use App\Http\Controllers\SelfServiceController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,92 +32,106 @@ Route::middleware('auth')->group(function () {
 });
 // ==================================================
 
+// ============== Regular User (Customer) Area ==============
+// Landing page after login for anyone with role = 'user'. Shows their own
+// tickets + own communication history, and lets them file a new concern.
+// Protected by 'auth' only — NOT 'can:admin' — any logged-in account can
+// see their OWN data here (that's the whole point of this view).
+Route::middleware('auth')->group(function () {
+    Route::get('/my-dashboard', [TicketController::class, 'userDashboard'])->name('user.home');
+    Route::patch('/tickets/{ticket}/cancel', [TicketController::class, 'cancel'])->name('tickets.cancel');
+    Route::post('/tickets/mine', [TicketController::class, 'store'])->name('tickets.storeUser');
+});
+// ============================================================
+
+Route::middleware('auth')->group(function () {
+    Route::get('/tickets/{ticket}/messages', [TicketController::class, 'messages']);
+    Route::post('/tickets/{ticket}/messages', [TicketController::class, 'sendMessage']);
+});
+
 Route::prefix('customer-service')->middleware('auth')->group(function () {
 
-    // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    // ---------------------------------------------------------------
+    // ADMIN-ONLY CORE (Dashboard, Agents, Activity Logs, Notifications)
+    // These have no user-facing equivalent, so the whole block is
+    // locked behind the 'admin' Gate.
+    // ---------------------------------------------------------------
+    Route::middleware('can:admin')->group(function () {
 
-    // Agents
-    Route::get('/agents', [AgentController::class, 'index']);
-    Route::post('/agents', [AgentController::class, 'store'])->name('agents.store');
-    Route::put('/agents/{agent}', [AgentController::class, 'update']);
-    Route::delete('/agents/{agent}', [AgentController::class, 'destroy']);
+        // Dashboard
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
-    // Activity Logs
-    Route::get('/logs/{filter?}', [ActivityLogController::class, 'index']);
-    Route::post('/logs', [ActivityLogController::class, 'store']);
-    Route::put('/logs/{activityLog}', [ActivityLogController::class, 'update']);
-    Route::delete('/logs/{activityLog}', [ActivityLogController::class, 'destroy']);
+        // Agents
+        Route::get('/agents', [AgentController::class, 'index']);
+        Route::post('/agents', [AgentController::class, 'store'])->name('agents.store');
+        Route::put('/agents/{agent}', [AgentController::class, 'update']);
+        Route::delete('/agents/{agent}', [AgentController::class, 'destroy']);
 
-    // Notifications
-    Route::post('/notifications/mark-read', [ActivityLogController::class, 'markAllRead']);
+        // Activity Logs
+        Route::get('/logs/{filter?}', [ActivityLogController::class, 'index']);
+        Route::post('/logs', [ActivityLogController::class, 'store']);
+        Route::put('/logs/{activityLog}', [ActivityLogController::class, 'update']);
+        Route::delete('/logs/{activityLog}', [ActivityLogController::class, 'destroy']);
 
-    // Self-Service Portal
-    // Self-Service Portal
+        // Notifications
+        Route::post('/notifications/mark-read', [ActivityLogController::class, 'markAllRead']);
 
+    });
+
+    // ---------------------------------------------------------------
     Route::prefix('self-service')->group(function () {
 
-        Route::get('/', function () {
-            return view('selfserviceportal');
-        });
+        // Iisang URL na lang — controller ang magde-decide kung admin o user view
+        Route::get('/', [SelfServiceController::class, 'index'])->name('self-service.index');
 
         Route::get('/billing-items', [BillingItemController::class, 'index']);
-        Route::post('/billing-items', [BillingItemController::class, 'store']);
+        Route::post('/billing-items', [BillingItemController::class, 'store'])->middleware('can:admin');
         Route::patch('/billing-items/{billingItem}/rate', [BillingItemController::class, 'rate']);
-        Route::put('/billing-items/{billingItem}', [BillingItemController::class, 'update']);
-        Route::delete('/billing-items/{billingItem}', [BillingItemController::class, 'destroy']);
+        Route::put('/billing-items/{billingItem}', [BillingItemController::class, 'update'])->middleware('can:admin');
+        Route::delete('/billing-items/{billingItem}', [BillingItemController::class, 'destroy'])->middleware('can:admin');
 
         Route::get('/articles', [ArticleController::class, 'index']);
-        Route::post('/articles', [ArticleController::class, 'store']);
+        Route::post('/articles', [ArticleController::class, 'store'])->middleware('can:admin');
         Route::patch('/articles/{article}/rate', [ArticleController::class, 'rate']);
-        Route::put('/articles/{article}', [ArticleController::class, 'update']);
-        Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
+        Route::put('/articles/{article}', [ArticleController::class, 'update'])->middleware('can:admin');
+        Route::delete('/articles/{article}', [ArticleController::class, 'destroy'])->middleware('can:admin');
 
+        // Iisang URL din para sa refund requests — data returned depende sa role
         Route::get('/refund-requests', [RefundRequestController::class, 'index']);
         Route::post('/refund-requests', [RefundRequestController::class, 'store']);
         Route::delete('/refund-requests/{refundRequest}', [RefundRequestController::class, 'destroy']);
 
-        // Admin - Refund Requests management
-        Route::get('/refund-requests/admin', function () {
-            return view('admin-refund-requests');
-        });
-        Route::get('/refund-requests/admin-data', [RefundRequestController::class, 'adminIndex']);
-        Route::patch('/refund-requests/{refundRequest}/approve', [RefundRequestController::class, 'approve']);
-        Route::patch('/refund-requests/{refundRequest}/reject', [RefundRequestController::class, 'reject']);
-        Route::delete('/refund-requests/{refundRequest}/admin', [RefundRequestController::class, 'adminDestroy']);
-
-        // Admin - Full self-service portal (billing, articles, refunds management)
-        Route::get('/admin', function () {
-            return view('admin-selfserviceportal');
+        // Approve/reject — admin-only actions, pero hindi na kailangan ng separate "admin" URL
+        // dahil buttons na lang ito na visible sa admin view
+        Route::middleware('can:admin')->group(function () {
+            Route::patch('/refund-requests/{refundRequest}/approve', [RefundRequestController::class, 'approve']);
+            Route::patch('/refund-requests/{refundRequest}/reject', [RefundRequestController::class, 'reject']);
+            Route::delete('/refund-requests/{refundRequest}/admin', [RefundRequestController::class, 'adminDestroy']);
         });
 
     });
 
-    // Ticket Management (User / Agent-facing view)
-    Route::prefix('ticket-management')->group(function () {
+    // ---------------------------------------------------------------
+    // Ticket Management — Agent/Admin-facing view ONLY.
+    // Customers now file + view their own tickets through /my-dashboard
+    // instead, so the old duplicate '/admin' full-edit route has been
+    // removed — this single route IS the admin/agent view, protected
+    // by the 'admin' Gate.
+    // ---------------------------------------------------------------
+    Route::prefix('ticket-management')->middleware('can:admin')->group(function () {
 
-        Route::get('/', [TicketController::class, 'index'])->name('ticketmanagement');
+        Route::get('/', [TicketController::class, 'adminIndex'])->name('ticketmanagement');
         Route::get('/analytics', [TicketController::class, 'analytics'])->name('tickets.analytics');
         Route::post('/', [TicketController::class, 'store'])->name('tickets.store');
         Route::put('/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
         Route::delete('/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 
-        // Admin View (full edit access: status, priority, category, assigned agent)
-        // Requires an 'admin' Gate/ability to be defined, e.g. in AuthServiceProvider:
-        //   Gate::define('admin', fn ($user) => $user->role === 'admin');
-        Route::get('/admin', [TicketController::class, 'adminIndex'])
-            ->name('tickets.admin')
-            ->middleware('can:admin');
-
-        // Optional: dedicated endpoint for admins to reply/patch a ticket's chat + fields
-        // Route::post('/admin/{ticket}/reply', [TicketController::class, 'adminReply'])
-        //     ->name('tickets.admin.reply')
-        //     ->middleware('can:admin');
-
     });
 
-    // SLA Tracking
-    Route::prefix('sla-tracking')->group(function () {
+    // ---------------------------------------------------------------
+    // SLA Tracking — admin/agent-only, no customer-facing equivalent.
+    // ---------------------------------------------------------------
+    Route::prefix('sla-tracking')->middleware('can:admin')->group(function () {
 
         Route::get('/', [SlaController::class, 'index']);
         Route::post('/rules', [SlaController::class, 'storeRule']);
@@ -126,18 +141,26 @@ Route::prefix('customer-service')->middleware('auth')->group(function () {
 
     });
 
-    // Communication History
-    Route::get('/communication-history', [CommunicationController::class, 'index'])
-        ->name('communication.index');
+    // ---------------------------------------------------------------
+    // Communication History — admin/agent-only full view (all customers'
+    // records). Customers see only their OWN communication history
+    // through /my-dashboard, which queries the data directly instead
+    // of going through this route.
+    // ---------------------------------------------------------------
+    Route::middleware('can:admin')->group(function () {
 
-    Route::post('/communication-history/store', [CommunicationController::class, 'store'])
-        ->name('communication.store');
+        Route::get('/communication-history', [CommunicationController::class, 'index'])
+            ->name('communication.index');
 
-    Route::put('/communication-history/{id}', [CommunicationController::class, 'update'])
-        ->name('communication.update');
+        Route::post('/communication-history/store', [CommunicationController::class, 'store'])
+            ->name('communication.store');
 
-    Route::get('/dashboard-history', [CommunicationController::class, 'dashboardHistory'])
-        ->name('dashboard.history');
+        Route::put('/communication-history/{id}', [CommunicationController::class, 'update'])
+            ->name('communication.update');
 
+        Route::get('/dashboard-history', [CommunicationController::class, 'dashboardHistory'])
+            ->name('dashboard.history');
+
+    });
 
 });

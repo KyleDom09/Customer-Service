@@ -344,13 +344,31 @@
       }">
 
     <div class="flex h-screen overflow-hidden">
-        
-        @include('partials.sidebar')
+
+        <!--
+            NOTE: The admin sidebar (@include('partials.sidebar')) was removed
+            on purpose. This page is reachable by BOTH regular customers and
+            admins, but the sidebar links to Dashboard / Ticket Management /
+            Communication History / SLA Tracking — all now locked behind
+            'can:admin'. A regular customer seeing those links would just hit
+            a 403 when clicking them, which is confusing. Instead, a simple
+            "Back to My Dashboard" link is shown for regular users, and an
+            equivalent "Back to Admin Dashboard" link is shown for admins.
+        -->
 
         <div class="flex-1 flex flex-col overflow-y-auto">
             
             <header class="bg-white px-8 py-4 flex items-center justify-between border-b border-slate-200 sticky top-0 z-10">
                 <div class="flex items-center space-x-4">
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('dashboard.index') }}" class="text-slate-400 hover:text-slate-600 text-sm" title="Back to Admin Dashboard">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    @else
+                        <a href="{{ route('user.home') }}" class="text-slate-400 hover:text-slate-600 text-sm" title="Back to My Dashboard">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    @endif
                     <h2 class="text-xl font-bold text-[#1e3a8a] cursor-pointer" @click="currentView = 'main'">Self-Service Portal</h2>
                 </div>
                 
@@ -542,9 +560,11 @@
                             <div>
                                 <div class="flex items-center space-x-3">
                                     <h3 class="text-xl font-bold text-blue-900">Billing & Invoicing Solutions</h3>
+                                    @if(auth()->user()->role === 'admin')
                                     <button @click="isModalOpen = true" class="w-6 h-6 bg-blue-600 text-white rounded-md flex items-center justify-center hover:bg-blue-700 transition shadow-xs text-sm cursor-pointer">
                                         <i class="fas fa-plus text-xs"></i>
                                     </button>
+                                    @endif
                                 </div>
                                 <p class="text-xs text-slate-400 mt-1">Manage your financial records and resolve discrepancy issues.</p>
                             </div>
@@ -843,9 +863,11 @@
                         <div class="flex items-center justify-between border-b pb-2">
                             <div class="flex items-center space-x-3">
                                 <h3 class="text-xl font-bold text-blue-900">Popular Articles Knowledgebase</h3>
+                                @if(auth()->user()->role === 'admin')
                                 <button @click="isArticleModalOpen = true" class="w-6 h-6 bg-blue-600 text-white rounded-md flex items-center justify-center hover:bg-blue-700 transition shadow-xs text-sm cursor-pointer">
                                     <i class="fas fa-plus text-xs"></i>
                                 </button>
+                                @endif
                             </div>
                         </div>
                         <div class="space-y-6">
@@ -875,6 +897,7 @@
         </div>
     </div>
 
+    @if(auth()->user()->role === 'admin')
     <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4" 
          x-show="isModalOpen" 
          x-transition
@@ -916,6 +939,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4" 
          x-show="isRefundFormOpen" 
@@ -989,6 +1013,7 @@
         </div>
     </div>
 
+    @if(auth()->user()->role === 'admin')
     <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4" 
          x-show="isArticleModalOpen" 
          x-transition
@@ -1024,6 +1049,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 </body>
 </html>

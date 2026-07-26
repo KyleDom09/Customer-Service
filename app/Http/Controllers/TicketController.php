@@ -36,6 +36,66 @@ class TicketController extends Controller
         return view('admin-ticket-management', compact('tickets', 'metrics', 'agents'));
     }
 
+    // =====================================================================
+    // NEW: User-facing dashboard — makikita LANG ng naka-login na customer
+    // ang sarili niyang mga ticket AT communication history (filtered gamit
+    // ang user_id, hindi email/name string matching, para secure at hindi
+    // na-guguess ng ibang user). Ito ang landing page pagkatapos mag-login
+    // ng isang regular (non-admin) user — see route('user.home').
+    // =====================================================================
+    public function userDashboard()
+    {
+        $tickets = Ticket::with('agentModel')
+            ->where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $communications = DB::table('communications')
+            ->where('user_id', auth()->id())
+            ->latest('id')
+            ->get();
+
+        return view('user-dashboard', compact('tickets', 'communications'));
+    }
+
+    public function messages(Ticket $ticket)
+    {
+        // Security: user makikita lang messages ng sariling ticket (maliban kung admin)
+        if (auth()->user()->role !== 'admin' && $ticket->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return $ticket->messages()->orderBy('created_at')->get();
+    }
+
+    public function sendMessage(Request $request, Ticket $ticket)
+    {
+        if (auth()->user()->role !== 'admin' && $ticket->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate(['body' => 'required|string|max:2000']);
+
+        $isAdmin = auth()->user()->role === 'admin';
+
+        $message = $ticket->messages()->create([
+            'user_id' => auth()->id(),
+            'sender_role' => $isAdmin ? 'admin' : 'customer',
+            'sender_name' => auth()->user()->name,
+            'body' => $validated['body'],
+        ]);
+
+        // Record the FIRST admin reply's response time (in minutes since ticket creation)
+        if ($isAdmin && is_null($ticket->response_minutes)) {
+            $ticket->response_minutes = $ticket->created_at->diffInMinutes(now());
+        }
+
+        $ticket->status = $isAdmin ? 'IN PROGRESS' : 'PENDING';
+        $ticket->save();
+
+        return response()->json($message, 201);
+    }
+
     // Ito ang bagong method para i-save ang bagong ticket sa database
     public function store(Request $request)
     {
@@ -56,12 +116,23 @@ class TicketController extends Controller
         // Default na status ng bagong ticket
         $validated['status'] = 'OPEN';
 
+        // I-link ang ticket sa currently logged-in user (kung may naka-login).
+        // Ginawang nullable ito sa migration kaya hindi masisira ang admin-created
+        // tickets na walang kaugnay na account.
+        $validated['user_id'] = auth()->id();
+
         $ticket = Ticket::create($validated);
 
         // Auto-log this ticket creation into Communication History,
         // so agents can see the full conversation trail without
         // digging through the Ticket Management page separately.
         $this->logCommunication($ticket, 'New ticket created: ' . $ticket->ticket_number . ' — ' . $ticket->subject);
+
+        // Kung galing ito sa user-facing "file a concern" form, ibalik doon;
+        // kung galing sa admin/agent Ticket Management form, doon din babalik.
+        if ($request->routeIs('tickets.storeUser')) {
+            return redirect()->route('user.home')->with('success', 'Matagumpay na naisumite ang iyong concern!');
+        }
 
         return redirect()->route('ticketmanagement')->with('success', 'Matagumpay na naidagdag ang bagong ticket!');
     }
@@ -75,7 +146,7 @@ class TicketController extends Controller
             'category'       => 'required|string|max:255',
             'agent_id'       => 'nullable|exists:agents,id',
             'priority'       => 'required|in:LOW,MEDIUM,HIGH,CRITICAL',
-            'status'         => 'required|in:OPEN,PENDING,IN PROGRESS,RESOLVED,CLOSED',
+            'status'         => 'required|in:OPEN,PENDING,IN PROGRESS,RESOLVED,CLOSED,CANCELLED',
             'subject'        => 'required|string|max:255',
             'description'    => 'nullable|string',
         ]);
@@ -142,6 +213,7 @@ class TicketController extends Controller
         }
 
         DB::table('communications')->insert([
+            'user_id'        => $ticket->user_id,
             'customer_name'  => $ticket->customer_name,
             'customer_email' => $ticket->customer_email,
             'date'           => now()->format('M d'),
@@ -259,5 +331,31 @@ class TicketController extends Controller
         $arrow = $percent > 0 ? '▲' : ($percent < 0 ? '▼' : '—');
 
         return $arrow . ' ' . number_format(abs($percent), 1) . '%';
+    }
+
+    public function billingApi()
+    {
+        $tickets = Ticket::where('category', 'Billing')
+            ->select('ticket_number', 'customer_name', 'customer_email', 'subject', 'status', 'priority', 'created_at')
+            ->latest()
+            ->get();
+
+        return response()->json($tickets);
+    }
+
+    public function cancel(Ticket $ticket)
+    {
+        // Security: sarili lang niya pwede i-cancel
+        if ($ticket->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($ticket->status !== 'OPEN') {
+            return back()->with('error', 'Hindi na pwedeng i-cancel ang ticket na ito.');
+        }
+
+        $ticket->update(['status' => 'CANCELLED']);
+
+        return redirect()->route('user.home')->with('success', 'Na-cancel na ang ticket.');
     }
 }

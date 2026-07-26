@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Customer Service - Ticket Management (Admin View)</title>
     <script src="{{ asset('vendor/tailwind.js') }}"></script>
     <style> body { font-family: 'Segoe UI', 'Inter', sans-serif; } </style>
@@ -68,10 +69,12 @@
 
                 <div class="relative">
                     <button onclick="toggleProfileMenu(event)" id="profile-btn" class="flex items-center gap-3 border-l border-slate-200 pl-4 cursor-pointer">
-                        <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">TF</div>
+                        <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
                         <div class="text-left">
-                            <div class="text-xs font-semibold text-slate-800">Timoty Filoteo</div>
-                            <div class="text-[10px] text-slate-400">Ticket Manager</div>
+                            <div class="text-xs font-semibold text-slate-800">{{ auth()->user()->name }}</div>
+                            <div class="text-[10px] text-slate-400">{{ ucfirst(auth()->user()->role) }}</div>
                         </div>
                     </button>
 
@@ -223,7 +226,8 @@
                                         {{ $ticket->status == 'IN PROGRESS' ? 'bg-purple-50 text-purple-600 border border-purple-100' : '' }}
                                         {{ $ticket->status == 'PENDING' ? 'bg-amber-50 text-amber-600 border border-amber-100' : '' }}
                                         {{ $ticket->status == 'RESOLVED' ? 'bg-green-50 text-green-600 border border-green-100' : '' }}
-                                        {{ $ticket->status == 'CLOSED' ? 'bg-slate-100 text-slate-400 border border-slate-200' : '' }}">
+                                        {{ $ticket->status == 'CLOSED' ? 'bg-slate-100 text-slate-400 border border-slate-200' : '' }}
+                                        {{ $ticket->status == 'CANCELLED' ? 'bg-red-50 text-red-500 border border-red-100' : '' }}">
                                         {{ $ticket->status }}
                                     </span>
                                 </td>
@@ -271,6 +275,7 @@
                         <option value="IN PROGRESS">IN PROGRESS</option>
                         <option value="RESOLVED">RESOLVED</option>
                         <option value="CLOSED">CLOSED</option>
+                        <option value="CANCELLED">CANCELLED</option>
                     </select>
                     <span id="drawer-waiting-badge" class="hidden px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">⏳ Waiting for your reply</span>
                 </div>
@@ -322,21 +327,11 @@
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 text-[11px] mb-4">
                     <div class="flex justify-between items-center"><span class="text-slate-400">Category:</span>
                         <select name="category" id="drawer-category" onchange="adminChangeCategory()" class="font-semibold text-slate-700 bg-transparent outline-none text-right cursor-pointer">
-                            <option value="Auth">Auth</option>
                             <option value="Billing">Billing</option>
+                            <option value="Auth">Account / Login</option>
                             <option value="Technical">Technical</option>
-                            <option value="Feature">Feature</option>
-                            <option value="Bug">Bug</option>
-                            <option value="Perf">Perf</option>
-                            <option value="Integration">Integration</option>
+                            <option value="Feature">Feature Request</option>
                         </select>
-                    </div>
-                    <div class="flex justify-between"><span class="text-slate-400">Created:</span><span class="font-semibold text-slate-700">Jan 15, 2026</span></div>
-                    <div>
-                        <div class="flex justify-between text-red-500 font-semibold mb-1"><span>SLA Status:</span><span>2 hrs remaining</span></div>
-                        <div class="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div class="w-[20%] h-full bg-red-500"></div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -533,100 +528,61 @@
         let currentAgentBg = 'bg-[#E0F2FE] text-[#0369A1]';
         let currentCustomerName = 'Customer';
 
-        function chatStorageKey(ticketId) {
-            return 'ticket_chat_' + ticketId;
+        async function loadMessages(ticketId) {
+            const res = await fetch(`/tickets/${ticketId}/messages`);
+            const messages = await res.json();
+            renderChatMessages(messages);
         }
 
-        function loadChatMessages(ticketId) {
-            const raw = localStorage.getItem(chatStorageKey(ticketId));
-            if (raw) {
-                try { return JSON.parse(raw); } catch (e) { /* fallthrough */ }
-            }
-            return [
-                { role: 'customer', name: currentCustomerName, text: "I can't login at all, getting error 401", time: '10:23 AM' },
-                { role: 'admin', name: currentAgentName + ' (Agent)', text: "I'm looking into this, checking auth service logs", time: '10:35 AM' },
-                { role: 'customer', name: currentCustomerName, text: 'Still not working, please help!', time: '11:02 AM' }
-            ];
+        async function sendChatMessage(event) {
+            event.preventDefault();
+            if (!currentTicketKey) return;
+
+            const input = document.getElementById('chat-input');
+            const body = input.value.trim();
+            if (!body) return;
+
+            await fetch(`/tickets/${currentTicketKey}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ body })
+            });
+
+            input.value = '';
+            loadMessages(currentTicketKey);
         }
 
-        function saveChatMessages(ticketId, messages) {
-            localStorage.setItem(chatStorageKey(ticketId), JSON.stringify(messages));
-        }
-
-        function renderChatMessages(ticketId) {
-            const messages = loadChatMessages(ticketId);
+        function renderChatMessages(messages) {
             const container = document.getElementById('drawer-chat-messages');
             container.innerHTML = '';
 
             messages.forEach(msg => {
-                const isAdmin = msg.role === 'admin';
-                const isSystem = msg.role === 'system';
+                const isAdmin = msg.sender_role === 'admin';
                 const bubble = document.createElement('div');
-                bubble.className = 'flex ' + (isSystem ? 'justify-center' : (isAdmin ? 'justify-end' : 'justify-start'));
-                bubble.innerHTML = msg.role === 'system' ? `
-                    <div class="max-w-[85%] mx-auto text-center">
-                        <div class="text-[10px] px-3 py-2 rounded-xl leading-snug bg-blue-50 border border-blue-100 text-blue-700">
-                            <span class="font-semibold">${msg.name}:</span> ${escapeHtml(msg.text)}
-                        </div>
-                        <div class="text-[9px] text-slate-400 mt-0.5">${msg.time}</div>
-                    </div>
-                ` : `
+                bubble.className = 'flex ' + (isAdmin ? 'justify-end' : 'justify-start');
+                bubble.innerHTML = `
                     <div class="max-w-[80%]">
                         <div class="flex items-center gap-1.5 mb-0.5 ${isAdmin ? 'justify-end' : ''}">
-                            <span class="text-[9px] font-semibold ${isAdmin ? 'text-[#00875F]' : 'text-slate-600'}">${msg.name}</span>
-                            <span class="text-[9px] text-slate-400">${msg.time}</span>
+                            <span class="text-[9px] font-semibold ${isAdmin ? 'text-[#00875F]' : 'text-slate-600'}">${msg.sender_name}</span>
                         </div>
                         <div class="text-[11px] px-3 py-2 rounded-2xl leading-snug ${isAdmin ? 'bg-[#00CB92] text-white rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-sm'}">
-                            ${escapeHtml(msg.text)}
+                            ${escapeHtml(msg.body)}
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 container.appendChild(bubble);
             });
 
             container.scrollTop = container.scrollHeight;
-            updateWaitingBadge(messages);
         }
 
-        function updateWaitingBadge(messages) {
-            const badge = document.getElementById('drawer-waiting-badge');
-            if (!messages.length) { badge.classList.add('hidden'); return; }
-            const lastMsg = messages[messages.length - 1];
-            if (lastMsg.role === 'customer') {
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
 
         function escapeHtml(str) {
             const div = document.createElement('div');
             div.innerText = str;
             return div.innerHTML;
-        }
-
-        function sendChatMessage(event) {
-            event.preventDefault();
-            if (!currentTicketKey) return;
-
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const name = currentAgentName + ' (Agent)';
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            const messages = loadChatMessages(currentTicketKey);
-            messages.push({ role: 'admin', name, text, time });
-            saveChatMessages(currentTicketKey, messages);
-
-            input.value = '';
-            renderChatMessages(currentTicketKey);
-
-            const currentStatus = document.getElementById('drawer-status').value;
-            if (currentStatus === 'OPEN' || currentStatus === 'PENDING') {
-                setTicketStatus(currentTicketKey, 'IN PROGRESS');
-            }
         }
 
         // ==============================
@@ -663,8 +619,9 @@
 
         function adminChangeAgent() {
             const select = document.getElementById('drawer-agent-select');
-            const agentName = select.value;
-            const initials = select.options[select.selectedIndex].dataset.initials || agentName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+            const selectedOption = select.options[select.selectedIndex];
+            const agentName = selectedOption.dataset.name;       // tamang pangalan na ngayon
+            const initials = selectedOption.dataset.initials || '';
 
             currentAgentName = agentName;
             currentAgentInitials = initials;
@@ -708,6 +665,7 @@
             if (status === 'IN PROGRESS') return 'bg-purple-50 text-purple-600 border border-purple-100';
             if (status === 'PENDING') return 'bg-amber-50 text-amber-600 border border-amber-100';
             if (status === 'RESOLVED') return 'bg-green-50 text-green-600 border border-green-100';
+            if (status === 'CANCELLED') return 'bg-red-50 text-red-500 border border-red-100';
             return 'bg-slate-100 text-slate-400 border border-slate-200';
         }
 
@@ -797,7 +755,7 @@
 
             // Load chat for this specific ticket
             currentTicketKey = ticketId;
-            renderChatMessages(currentTicketKey);
+            loadMessages(currentTicketKey);
 
             document.getElementById('ticket-drawer').classList.remove('translate-x-full');
         }

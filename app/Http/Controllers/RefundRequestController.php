@@ -9,7 +9,11 @@ class RefundRequestController extends Controller
 {
     public function index()
     {
-        return RefundRequest::latest()->get();
+        if (auth()->user()->role === 'admin') {
+            return RefundRequest::latest()->get();
+        }
+
+        return RefundRequest::where('user_id', auth()->id())->latest()->get();
     }
 
     public function store(Request $request)
@@ -26,6 +30,7 @@ class RefundRequestController extends Controller
         }
 
         $refundRequest = RefundRequest::create([
+            'user_id' => auth()->id(),      // idagdag ito
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'image_path' => $imagePath,
@@ -75,5 +80,14 @@ class RefundRequestController extends Controller
         $refundRequest->delete();
 
         return response()->json(['message' => 'Refund request deleted.'], 200);
+    }
+
+    public function financeApi()
+    {
+        $refunds = RefundRequest::select('id', 'title', 'description', 'status', 'created_at')
+            ->latest()
+            ->get();
+
+        return response()->json($refunds);
     }
 }

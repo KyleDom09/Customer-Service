@@ -68,10 +68,12 @@
 
                 <div class="relative">
                     <button onclick="toggleProfileMenu(event)" id="profile-btn" class="flex items-center gap-3 border-l border-slate-200 pl-4 cursor-pointer">
-                        <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">TF</div>
+                        <div class="w-8 h-8 rounded-full bg-[#1A2B6D] flex items-center justify-center text-white text-xs font-bold">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
                         <div class="text-left">
-                            <div class="text-xs font-semibold text-slate-800">Timoty Filoteo</div>
-                            <div class="text-[10px] text-slate-400">Ticket Manager</div>
+                            <div class="text-xs font-semibold text-slate-800">{{ auth()->user()->name }}</div>
+                            <div class="text-[10px] text-slate-400">{{ ucfirst(auth()->user()->role) }}</div>
                         </div>
                     </button>
 

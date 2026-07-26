@@ -22,6 +22,20 @@ class CommunicationController extends Controller
         return view('Communication-History', compact('communications', 'agents', 'tickets'));
     }
 
+    // =====================================================================
+    // NEW: User-facing view — makikita LANG ng naka-login na customer ang
+    // sarili niyang communication history (filtered gamit ang user_id).
+    // =====================================================================
+    public function myCommunications()
+    {
+        $communications = DB::table('communications')
+            ->where('user_id', auth()->id())
+            ->latest('id')
+            ->get();
+
+        return view('user-communications', compact('communications'));
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -38,6 +52,7 @@ class CommunicationController extends Controller
         $agent = Agent::find($validated['agent_id']);
 
         DB::table('communications')->insert([
+            'user_id'        => auth()->id(),
             'customer_name'  => $validated['customer_name'],
             'customer_email' => $validated['customer_email'],
             'date'           => now()->format('M d'),

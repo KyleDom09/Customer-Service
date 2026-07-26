@@ -44,17 +44,22 @@ class RegisterController extends Controller
                 ->withInput($request->only('first_name', 'last_name', 'email'));
         }
 
+        // IMPORTANT: publicly self-registered accounts are ALWAYS plain
+        // customers, never admins. Admin accounts should only ever be
+        // created manually (seeder, tinker, or a protected admin-only
+        // "create agent" form) — never through this public signup form.
         $user = User::create([
             'name'     => trim($request->first_name . ' ' . $request->last_name),
             'email'    => $request->email,
             'password' => Hash::make($request->password),
+            'role'     => 'user',
         ]);
 
         Auth::login($user);
 
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard.index')
+        return redirect()->route('user.home')
             ->with('success', 'Account created successfully.');
     }
 }

@@ -10,6 +10,7 @@ class Ticket extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'ticket_number',
         'customer_name',
         'customer_email',
@@ -23,6 +24,12 @@ class Ticket extends Model
         'response_minutes',
         'resolved_at',
     ];
+
+    // Relasyon: isang ticket ay maaaring may naka-link na account (user_id)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     // Relasyon: isang ticket ay maaaring may isang naka-assign na agent
     public function agentModel()
@@ -87,6 +94,11 @@ class Ticket extends Model
     public function getUpdatedAttribute()
     {
         return $this->updated_at ? $this->updated_at->diffForHumans() : '-';
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(TicketMessage::class);
     }
 
     // Helper: kumuha ng unang letra ng unang 2 salita ng pangalan
