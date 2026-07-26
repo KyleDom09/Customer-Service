@@ -319,7 +319,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <span id="drawer-agent-rating" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0">⭐ —</span>
+                    <span id="drawer-agent-rating" onclick="editAgentRating()" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0 cursor-pointer hover:bg-amber-100 transition" title="I-click para baguhin ang rating">⭐ —</span>
                 </div>
 
                 <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Details</p>
@@ -662,6 +662,50 @@
             if (row) {
                 const cell = row.querySelector('td:nth-child(4) span');
                 if (cell) cell.innerHTML = '📁 ' + category;
+            }
+        }
+
+        async function editAgentRating() {
+            const select = document.getElementById('drawer-agent-select');
+            const selectedOption = select.options[select.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                alert('Pumili muna ng agent bago magtakda ng rating.');
+                return;
+            }
+
+            const currentRating = selectedOption.dataset.rating && selectedOption.dataset.rating !== '—'
+                ? selectedOption.dataset.rating
+                : '';
+
+            const input = prompt(`Ilagay ang bagong rating para kay ${selectedOption.dataset.name} (0.0 - 5.0):`, currentRating);
+            if (input === null) return; // cancelled
+
+            const newRating = parseFloat(input);
+            if (isNaN(newRating) || newRating < 0 || newRating > 5) {
+                alert('Invalid na rating. Maglagay ng numero sa pagitan ng 0.0 at 5.0.');
+                return;
+            }
+
+            const agentId = selectedOption.value;
+
+            try {
+                const res = await fetch(`/agents/${agentId}/rating`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ rating: newRating })
+                });
+
+                if (!res.ok) throw new Error('Failed to update rating');
+
+                // i-update ang dataset ng option para sumalamin agad sa UI
+                selectedOption.dataset.rating = newRating.toFixed(1);
+                document.getElementById('drawer-agent-rating').innerText = '⭐ ' + newRating.toFixed(1);
+            } catch (err) {
+                console.error(err);
+                alert('Hindi na-save ang rating. Subukan ulit.');
             }
         }
 
