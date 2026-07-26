@@ -25,12 +25,12 @@
     </script>
 
     {{-- Chart.js --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{{ asset('vendor/chart.min.js') }}"></script>
 
     {{-- Export libraries (SheetJS for Excel, jsPDF for PDF) --}}
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="{{ asset('vendor/xlsx.min.js') }}"></script>
+    <script src="{{ asset('vendor/jspdf.min.js') }}"></script>
+    <script src="{{ asset('vendor/jspdf-autotable.min.js') }}"></script>
 </head>
 <body class="bg-gray-50 font-sans antialiased">
 
