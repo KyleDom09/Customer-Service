@@ -315,11 +315,11 @@
                         <div id="drawer-agent-initials" class="w-6 h-6 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-[10px] shrink-0">MC</div>
                         <select name="agent_id" id="drawer-agent-select" onchange="adminChangeAgent()" class="font-semibold text-slate-700 bg-transparent outline-none flex-1 cursor-pointer">
                             @foreach ($agents as $agentOption)
-                                <option value="{{ $agentOption->id }}" data-name="{{ $agentOption->name }}" data-initials="{{ $agentOption->initials ?? '' }}">{{ $agentOption->name }}</option>
+                                <option value="{{ $agentOption->id }}" data-name="{{ $agentOption->name }}" data-initials="{{ $agentOption->initials ?? '' }}" data-rating="{{ $agentOption->rating ?? '—' }}">{{ $agentOption->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <span class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0">⭐ 4.9</span>
+                    <span id="drawer-agent-rating" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0">⭐ —</span>
                 </div>
 
                 <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Details</p>
@@ -670,10 +670,12 @@
             const selectedOption = select.options[select.selectedIndex];
             const agentName = selectedOption.dataset.name;       // tamang pangalan na ngayon
             const initials = selectedOption.dataset.initials || '';
+            const rating = selectedOption.dataset.rating || '—';
 
             currentAgentName = agentName;
             currentAgentInitials = initials;
             document.getElementById('drawer-agent-initials').innerText = initials;
+            document.getElementById('drawer-agent-rating').innerText = '⭐ ' + rating;
 
             const row = document.querySelector(`.ticket-row[data-id="${currentTicketKey}"]`);
             if (row) {
@@ -799,6 +801,8 @@
             if ([...agentSelect.options].some(o => o.value === currentAgentName)) {
                 agentSelect.value = currentAgentName;
             }
+            const selectedAgentOption = agentSelect.options[agentSelect.selectedIndex];
+            document.getElementById('drawer-agent-rating').innerText = '⭐ ' + (selectedAgentOption?.dataset.rating || '—');
             document.getElementById('drawer-agent-initials').innerText = currentAgentInitials;
             document.getElementById('drawer-agent-initials').className = `w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${currentAgentBg}`;
 
