@@ -45,7 +45,7 @@
                         </div>
                         <div class="overflow-y-auto flex-1">
                             @forelse($tickets as $ticket)
-                                <div data-notif-id="{{ $ticket->id }}" class="px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50/70 transition flex items-start gap-2.5">
+                                <div data-notif-id="{{ $ticket->id }}" onclick="openTicketFromNotif({{ $ticket->id }})" class="px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50/70 transition flex items-start gap-2.5 cursor-pointer">
                                     <div class="w-7 h-7 rounded-full {{ $ticket->avatar_bg }} flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                                         {{ $ticket->initials }}
                                     </div>
@@ -892,6 +892,20 @@
         }
 
         // Notification Panel Actions
+        function openTicketFromNotif(ticketId) {
+            // isara muna ang notif panel
+            document.getElementById('notif-panel').classList.add('hidden');
+
+            // hanapin ang kaukulang row sa table at i-trigger ang click nito
+            // (para magamit ulit ang existing openDrawer logic, kasama na ang description mula sa row)
+            const row = document.querySelector(`.ticket-row[data-id="${ticketId}"]`);
+            if (row) {
+                row.click();
+            } else {
+                alert('Hindi mahanap ang ticket na ito sa kasalukuyang listahan (baka na-filter).');
+            }
+        }
+
         function toggleNotificationPanel(event) {
             event.stopPropagation();
             document.getElementById('profile-menu').classList.add('hidden');
