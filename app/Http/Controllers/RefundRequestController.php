@@ -82,12 +82,17 @@ class RefundRequestController extends Controller
         return response()->json(['message' => 'Refund request deleted.'], 200);
     }
 
-    public function financeApi()
+    public function salesApi()
     {
-        $refunds = RefundRequest::select('id', 'title', 'description', 'status', 'created_at')
+        $refunds = RefundRequest::select('id', 'user_id', 'title', 'description', 'status', 'created_at')
             ->latest()
             ->get();
 
-        return response()->json($refunds);
+        return response()->json([
+            'status' => 'success',
+            'source_module' => 'Customer Service',
+            'target_module' => 'Sales and Customer Support',
+            'data' => $refunds
+        ], 200);
     }
 }

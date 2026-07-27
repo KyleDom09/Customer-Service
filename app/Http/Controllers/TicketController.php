@@ -333,14 +333,19 @@ class TicketController extends Controller
         return $arrow . ' ' . number_format(abs($percent), 1) . '%';
     }
 
-    public function billingApi()
+    public function financeBillingApi()
     {
         $tickets = Ticket::where('category', 'Billing')
-            ->select('ticket_number', 'customer_name', 'customer_email', 'subject', 'status', 'priority', 'created_at')
+            ->select('ticket_number', 'user_id', 'customer_name', 'customer_email', 'subject', 'status', 'priority', 'created_at')
             ->latest()
             ->get();
 
-        return response()->json($tickets);
+        return response()->json([
+            'status' => 'success',
+            'source_module' => 'Customer Service',
+            'target_module' => 'Financing and Accounting',
+            'data' => $tickets
+        ], 200);
     }
 
     public function cancel(Ticket $ticket)
