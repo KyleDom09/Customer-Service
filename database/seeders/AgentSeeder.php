@@ -82,6 +82,18 @@ class AgentSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'name' => 'Filoteo',
+                'role' => 'Support Agent',
+                'team' => 'Technical',
+                'active_status' => 'online',
+                'total_assigned' => 33,
+                'total_resolved' => 29,
+                'avg_response_minutes' => 20,
+                'csat_score' => 4.4,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }

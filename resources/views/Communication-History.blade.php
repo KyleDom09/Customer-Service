@@ -490,7 +490,7 @@
 
     <div class="relative flex items-center justify-center px-6 sm:px-8 py-5 border-b border-slate-100 dark:border-slate-700">
       <div class="text-center">
-        <p class="text-xl font-bold text-slate-800 dark:text-slate-100">Edit Communication</p>
+        <p class="text-xl font-bold text-slate-800 dark:text-slate-100">View Communication</p>
         <p id="editCustomerLabel" class="text-base font-medium text-slate-500 dark:text-slate-400 mt-0.5"></p>
       </div>
       <button id="editCloseBtn" class="absolute right-6 sm:right-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
@@ -498,16 +498,18 @@
       </button>
     </div>
 
+    <p class="px-6 sm:px-8 pt-4 text-xs text-slate-400 dark:text-slate-500">This record is read-only and cannot be edited.</p>
+
     <form id="editForm" class="px-6 sm:px-8 py-6 space-y-4">
 
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Date</label>
-          <input id="editDate" type="text" placeholder="e.g. Jun 22" class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#121212] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl px-3.5 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
+          <input id="editDate" type="text" disabled placeholder="e.g. Jun 22" class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl px-3.5 py-2.5 text-base focus:outline-none cursor-not-allowed">
         </div>
         <div>
           <label class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Type</label>
-          <select id="editType" class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#121212] text-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
+          <select id="editType" disabled class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 rounded-xl px-3.5 py-2.5 text-base focus:outline-none cursor-not-allowed">
             <option value="mail">Email</option>
             <option value="phone">Phone</option>
             <option value="chat">Chat</option>
@@ -517,18 +519,18 @@
 
       <div>
         <label class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Subject</label>
-        <input id="editSubject" type="text" class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#121212] text-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
+        <input id="editSubject" type="text" disabled class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 rounded-xl px-3.5 py-2.5 text-base focus:outline-none cursor-not-allowed">
       </div>
 
       <div>
         <label class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Staff</label>
-        <input id="editStaff" type="text" class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#121212] text-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
+        <input id="editStaff" type="text" disabled class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 rounded-xl px-3.5 py-2.5 text-base focus:outline-none cursor-not-allowed">
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Status</label>
-          <select id="editStatus" class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#121212] text-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
+          <select id="editStatus" disabled class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 rounded-xl px-3.5 py-2.5 text-base focus:outline-none cursor-not-allowed">
             <option value="completed">Completed</option>
             <option value="pending">Pending</option>
             <option value="resolved">Resolved</option>
@@ -537,7 +539,7 @@
         </div>
         <div>
           <label class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Priority</label>
-          <select id="editPriority" class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#121212] text-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20">
+          <select id="editPriority" disabled class="w-full border border-[#E5E7EB] dark:border-slate-700 bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 rounded-xl px-3.5 py-2.5 text-base focus:outline-none cursor-not-allowed">
             <option value="high">High</option>
             <option value="medium">Medium</option>
             <option value="low">Low</option>
@@ -547,13 +549,11 @@
 
       <div>
         <label class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Resp Time</label>
-        <input id="editResp" type="text" readonly placeholder="Calculated automatically" class="w-full border border-[#E5E7EB] dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-base bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 focus:outline-none">
-        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Auto-calculated when status is set to Completed or Resolved.</p>
+        <input id="editResp" type="text" readonly disabled placeholder="Calculated automatically" class="w-full border border-[#E5E7EB] dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-base bg-slate-50 dark:bg-[#161616] text-slate-500 dark:text-slate-400 focus:outline-none cursor-not-allowed">
       </div>
 
       <div class="flex items-center justify-end gap-3 pt-2">
-        <button type="button" id="editCancelBtn" class="px-4 py-2.5 rounded-xl border border-[#CBD5E1] dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">Cancel</button>
-        <button type="submit" class="px-4 py-2.5 rounded-xl bg-[#10B981] text-white text-sm font-semibold hover:bg-emerald-600 transition-colors">Save changes</button>
+        <button type="button" id="editDoneBtn" class="px-5 py-2.5 rounded-xl bg-[#1E3A8A] text-white text-sm font-semibold hover:bg-[#16305f] transition-colors">Done</button>
       </div>
 
     </form>
@@ -1588,44 +1588,14 @@
   }
 
   document.getElementById('editCloseBtn').addEventListener('click', closeEditModal);
-  document.getElementById('editCancelBtn').addEventListener('click', closeEditModal);
+  document.getElementById('editDoneBtn').addEventListener('click', closeEditModal);
   document.getElementById('editOverlay').addEventListener('click', closeEditModal);
 
-  document.getElementById('editForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const r = rows.find(row => row.id == editingId);
-    if (!r) return;
-
-    const payload = {
-      date: document.getElementById('editDate').value,
-      type: document.getElementById('editType').value,
-      subject: document.getElementById('editSubject').value,
-      staff: document.getElementById('editStaff').value,
-      status: document.getElementById('editStatus').value,
-      priority: document.getElementById('editPriority').value,
-    };
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-    try {
-      const res = await fetch(`/customer-service/communication-history/${r.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error('Update failed');
-
-      closeEditModal();
-      window.location.reload(); // pull fresh data including recalculated resp_time
-    } catch (err) {
-      alert('Something went wrong saving this update. Please try again.');
-      console.error(err);
-    }
-  });
+  // View-only modal: fields are disabled in the markup and there is no
+  // save/submit handler here on purpose — records can no longer be edited
+  // from this popup. The PUT /communication-history/{id} route/controller
+  // method still exists server-side but nothing in this view calls it.
+  document.getElementById('editForm').addEventListener('submit', (e) => e.preventDefault());
 
   // ---- New Communication Modal logic ----
   const newModal = document.getElementById('newModal');
