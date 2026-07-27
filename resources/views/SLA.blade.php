@@ -33,6 +33,9 @@
             animation: ring 0.5s ease-in-out 3;
         }
     </style>
+    <script>
+        window.slaEscalationLogs = @json($escalationLogs);
+    </script>
 </head>
 <body class="bg-[#1e3a8a] text-slate-900 font-sans h-screen w-screen overflow-hidden p-0 m-0"
       x-data="{ 
@@ -67,11 +70,7 @@
             { id: '#1256', time: '12 mins left', ticketId: 'TK-1256' }
         ],
 
-        escalationLogs: [
-            { id: 1, type: 'fail', text: 'Traces a High Priority ticket that missed its mark, explicitly stating Escalated to Supervisor.', time: '10:42 AM', ticketId: '#TK-2847' },
-            { id: 2, type: 'success', text: 'Traces a second High Priority ticket breaching and being handed off.', time: '10:42 AM', ticketId: '#TK-2848' },
-            { id: 3, type: 'success', text: 'Displays a third High Priority ticket automated shift, marked as Breached.', time: '10:15 AM', ticketId: '#TK-2849' }
-        ],
+        escalationLogs: window.slaEscalationLogs || [],
 
         selectedTicket: { 
             id: '#TK-2847', 

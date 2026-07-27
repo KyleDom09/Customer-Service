@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\SlaRule;
 use App\Models\CalendarSetting;
+use App\Models\ActivityLog;
 
 class SlaController extends Controller
 {
@@ -12,7 +13,22 @@ class SlaController extends Controller
     {
         $rules = SlaRule::all();
         $calendar = CalendarSetting::first();
-        return view('SLA', compact('rules', 'calendar'));
+
+        $escalationLogs = ActivityLog::where('type', 'escalations')
+            ->orderByDesc('logged_at')
+            ->take(3)
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'type' => $log->severity === 'CRITICAL' ? 'fail' : 'success',
+                    'text' => $log->description,
+                    'time' => $log->logged_at->format('g:i A'),
+                    'ticketId' => $log->target_id,
+                ];
+            });
+
+        return view('SLA', compact('rules', 'calendar', 'escalationLogs'));
     }
 
     public function storeRule(Request $request)
