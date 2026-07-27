@@ -114,10 +114,6 @@
                     <h1 class="text-xl font-bold text-slate-900">Support Ticket Management</h1>
                     <p class="text-xs text-slate-400 mt-1">Manage customer support requests, monitor ticket progress, assign agents, and resolve issues efficiently.</p>
                 </div>
-                <div class="flex gap-2">
-                    <!-- Tinanggal ang Filter at Export dito, naiwan ang New Ticket na malinis -->
-                    <button onclick="openNewTicketModal()" class="bg-[#00CB92] text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#00B582] transition shadow-sm active:scale-95">+ New Ticket</button>
-                </div>
             </div>
 
             <!-- 4. METRICS CARDS -->
@@ -319,7 +315,6 @@
                             @endforeach
                         </select>
                     </div>
-                    <span id="drawer-agent-rating" onclick="editAgentRating()" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0 cursor-pointer hover:bg-amber-100 transition" title="I-click para baguhin ang rating">⭐ —</span>
                 </div>
 
                 <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-5 mb-2">Details</p>
@@ -359,77 +354,6 @@
         @csrf
         @method('DELETE')
     </form>
-
-
-    <!-- 7. NEW INTERACTIVE MODAL FOR "+ NEW TICKET" -->
-    <div id="new-ticket-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-2xl w-[450px] shadow-2xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-300">
-            <!-- Modal Header -->
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-900">Create New Support Ticket</h3>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Fill out customer details and request specifications.</p>
-                </div>
-                <button onclick="closeNewTicketModal()" class="text-slate-400 hover:text-slate-600 font-bold bg-slate-200/60 w-6 h-6 rounded-full flex items-center justify-center text-xs">✕</button>
-            </div>
-            
-            <!-- Modal Body Form -->
-            <form action="{{ route('tickets.store') }}" method="POST" class="p-6 space-y-4">
-                @csrf
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Customer Name</label>
-                    <input type="text" name="customer_name" required placeholder="e.g. Juan Dela Cruz" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Email Address</label>
-                    <input type="email" name="customer_email" required placeholder="e.g. juan@example.com" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Category</label>
-                        <select name="category" required class="w-full border border-slate-200 bg-white rounded-xl px-2 py-2 text-xs outline-none focus:border-blue-500 transition">
-                            <option value="Auth">Auth</option>
-                            <option value="Billing">Billing</option>
-                            <option value="Technical">Technical</option>
-                            <option value="Feature">Feature</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Priority Level</label>
-                        <select name="priority" required class="w-full border border-slate-200 bg-white rounded-xl px-2 py-2 text-xs outline-none focus:border-blue-500 transition">
-                            <option value="LOW" class="text-blue-500 font-semibold">LOW</option>
-                            <option value="MEDIUM" class="text-amber-500 font-semibold">MEDIUM</option>
-                            <option value="HIGH" class="text-orange-500 font-semibold">HIGH</option>
-                            <option value="CRITICAL" class="text-red-500 font-semibold">CRITICAL</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Assigned Agent</label>
-                    <select name="agent_id" class="w-full border border-slate-200 bg-white rounded-xl px-2 py-2 text-xs outline-none focus:border-blue-500 transition">
-                        <option value="">Unassigned</option>
-                        @foreach ($agents as $agentOption)
-                            <option value="{{ $agentOption->id }}">{{ $agentOption->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Subject Issue</label>
-                    <input type="text" name="subject" required placeholder="Brief statement of the concern" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Description</label>
-                    <textarea name="description" rows="3" placeholder="Describe the error or support request detailedly..." class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
-                </div>
-
-                <!-- Modal Footer Buttons -->
-                <div class="border-t border-slate-100 pt-4 flex gap-2 justify-end text-xs font-semibold">
-                    <button type="button" onclick="closeNewTicketModal()" class="border border-slate-200 text-slate-500 px-4 py-2 rounded-xl hover:bg-slate-50 transition">Cancel</button>
-                    <button type="submit" class="bg-[#00CB92] text-white px-5 py-2 rounded-xl hover:bg-[#00B582] transition shadow-sm">Submit Ticket</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- 7B. EDIT PROFILE MODAL -->
     <div id="edit-profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
@@ -665,61 +589,15 @@
             }
         }
 
-        async function editAgentRating() {
-            const select = document.getElementById('drawer-agent-select');
-            const selectedOption = select.options[select.selectedIndex];
-            if (!selectedOption || !selectedOption.value) {
-                alert('Pumili muna ng agent bago magtakda ng rating.');
-                return;
-            }
-
-            const currentRating = selectedOption.dataset.rating && selectedOption.dataset.rating !== '—'
-                ? selectedOption.dataset.rating
-                : '';
-
-            const input = prompt(`Ilagay ang bagong rating para kay ${selectedOption.dataset.name} (0.0 - 5.0):`, currentRating);
-            if (input === null) return; // cancelled
-
-            const newRating = parseFloat(input);
-            if (isNaN(newRating) || newRating < 0 || newRating > 5) {
-                alert('Invalid na rating. Maglagay ng numero sa pagitan ng 0.0 at 5.0.');
-                return;
-            }
-
-            const agentId = selectedOption.value;
-
-            try {
-                const res = await fetch(`/agents/${agentId}/rating`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ rating: newRating })
-                });
-
-                if (!res.ok) throw new Error('Failed to update rating');
-
-                // i-update ang dataset ng option para sumalamin agad sa UI
-                selectedOption.dataset.rating = newRating.toFixed(1);
-                document.getElementById('drawer-agent-rating').innerText = '⭐ ' + newRating.toFixed(1);
-            } catch (err) {
-                console.error(err);
-                alert('Hindi na-save ang rating. Subukan ulit.');
-            }
-        }
-
         function adminChangeAgent() {
             const select = document.getElementById('drawer-agent-select');
             const selectedOption = select.options[select.selectedIndex];
-            const agentName = selectedOption.dataset.name;       // tamang pangalan na ngayon
+            const agentName = selectedOption.dataset.name;
             const initials = selectedOption.dataset.initials || '';
-            const rating = selectedOption.dataset.rating || '—';
 
             currentAgentName = agentName;
             currentAgentInitials = initials;
             document.getElementById('drawer-agent-initials').innerText = initials;
-            document.getElementById('drawer-agent-rating').innerText = '⭐ ' + rating;
 
             const row = document.querySelector(`.ticket-row[data-id="${currentTicketKey}"]`);
             if (row) {
@@ -845,8 +723,7 @@
             if ([...agentSelect.options].some(o => o.value === currentAgentName)) {
                 agentSelect.value = currentAgentName;
             }
-            const selectedAgentOption = agentSelect.options[agentSelect.selectedIndex];
-            document.getElementById('drawer-agent-rating').innerText = '⭐ ' + (selectedAgentOption?.dataset.rating || '—');
+
             document.getElementById('drawer-agent-initials').innerText = currentAgentInitials;
             document.getElementById('drawer-agent-initials').className = `w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${currentAgentBg}`;
 
@@ -873,25 +750,6 @@
             if (confirm('Sigurado ka bang gusto mong i-delete ang ticket na ito?')) {
                 document.getElementById('ticket-delete-form').submit();
             }
-        }
-
-        // New Ticket Modal Actions
-        function openNewTicketModal() {
-            const modal = document.getElementById('new-ticket-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                modal.firstElementChild.classList.remove('scale-95');
-            }, 20);
-        }
-
-        function closeNewTicketModal() {
-            const modal = document.getElementById('new-ticket-modal');
-            modal.classList.add('opacity-0');
-            modal.firstElementChild.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
         }
 
         // Generic modal open/close helper (used by Edit Profile & Account Settings)

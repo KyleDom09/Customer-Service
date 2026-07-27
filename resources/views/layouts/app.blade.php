@@ -32,21 +32,21 @@
     <script src="{{ asset('vendor/jspdf.min.js') }}"></script>
     <script src="{{ asset('vendor/jspdf-autotable.min.js') }}"></script>
 </head>
-<body class="bg-gray-50 font-sans antialiased">
+<body class="bg-gray-50 font-sans antialiased h-screen overflow-hidden">
 
-    <div class="flex min-h-screen">
+    <div class="flex h-screen overflow-hidden">
 
         {{-- Sidebar --}}
         @include('partials.sidebar')
 
         {{-- Main Content Area --}}
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
             {{-- Navbar --}}
             @include('partials.navbar')
 
             {{-- Page Content --}}
-            <main class="flex-1 p-8">
+            <main class="flex-1 p-8 overflow-y-auto">
                 @yield('content')
             </main>
 
