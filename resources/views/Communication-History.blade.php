@@ -52,18 +52,20 @@
   }
 </style>
 </head>
-<body class="bg-[#F8FAFC] dark:bg-[#121212] text-slate-800 dark:text-slate-100 transition-colors">
+<body class="bg-[#F8FAFC] dark:bg-[#121212] text-slate-800 dark:text-slate-100 transition-colors h-screen overflow-hidden">
 
 <!-- Mobile overlay -->
 <div id="overlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
 
-<div class="flex min-h-screen">
+<div class="flex h-screen overflow-hidden">
 
   <!-- Sidebar -->
-  @include('partials.sidebar')
+  <div class="shrink-0">
+    @include('partials.sidebar')
+  </div>
 
   <!-- Main -->
-  <div class="flex-1 min-w-0">
+  <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
 
     <!-- Top Navbar -->
     <header class="h-20 bg-white dark:bg-[#1e1e1e] flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20 border-b border-slate-100 dark:border-slate-700 transition-colors">
@@ -120,12 +122,15 @@
       </div>
     </header>
 
-    <main class="p-4 sm:p-8">
+    <main class="flex-1 p-4 sm:p-8 overflow-y-auto">
 
       <!-- Page Header -->
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-2">
         <div>
-          <h2 class="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-blue-300">Customer Communication History</h2>
+          <h2 class="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-blue-300 leading-tight">
+            Communication<br>
+            History
+          </h2>
           <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage all customer interactions in one place.</p>
         </div>
         <div class="flex items-center gap-3">
@@ -921,6 +926,13 @@
     echo json_encode(array_map(function ($c) use ($avatarColors, &$i) {
         $color = $avatarColors[$i % count($avatarColors)];
         $i++;
+            $ticketAgent = $c->ticket?->agentModel?->name ?? null;
+        $relationAgent = $c->agent?->name ?? null;
+        $staffName = $ticketAgent ?: $relationAgent ?: $c->staff ?: '';
+
+        $ticketStatus = $c->ticket?->status ?? null;
+        $ticketPriority = $c->ticket?->priority ?? null;
+
         return [
             'id'       => $c->id,
             'initials' => getPhpInitials($c->customer_name ?? null),
@@ -930,9 +942,10 @@
             'date'     => $c->date ?? '',
             'type'     => $c->type ?? 'mail',
             'subject'  => $c->subject ?? '',
-            'staff'    => $c->staff ?? '',
+            'staff'    => $staffName,
             'status'   => $c->status ?? 'pending',
-            'priority' => $c->priority ?? 'medium',
+            'ticketStatus' => $ticketStatus,
+            'priority' => $ticketPriority ? strtolower($ticketPriority) : ($c->priority ?? 'medium'),
             'resp'     => $c->resp_time ?? '',
             'followUpDate'     => $c->follow_up_date ?? null,
             'followUpPriority' => $c->follow_up_priority ?? null,
@@ -973,19 +986,22 @@
   };
 
   const statusStyles = {
+    open: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
     completed: 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400',
     resolved: 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400',
     pending: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
-    in_progress: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
+    in_progress: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400',
+    closed: 'bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300',
     escalated: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400',
     cancelled: 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400',
   };
   const statusLabel = {
+    open: 'Open',
     completed: 'Resolved',
     resolved: 'Resolved',
     pending: 'Pending',
     in_progress: 'In Progress',
-    escalated: 'Escalated',
+    closed: 'Closed',
     cancelled: 'Cancelled',
   };
 
@@ -1023,8 +1039,17 @@
     `).join('');
   }
 
+  function normalizeStatus(s) {
+    if (!s) return '';
+    return s.toString().trim().toLowerCase().replace(/\s+/g, '_');
+  }
+
+  function rowStatus(row) {
+    return normalizeStatus(row.ticketStatus || row.status || '');
+  }
+
   function label(s) { if (!s) return 'N/A'; return s.charAt(0).toUpperCase() + s.slice(1); }
-  function statusText(s) { return statusLabel[s] || label(s); }
+  function statusText(s) { return statusLabel[normalizeStatus(s)] || label(s); }
   function typeText(t) { return typeLabel[t] || label(t); }
 
   const chatHistory = {
@@ -1113,7 +1138,7 @@
         </td>
         <td class="px-4 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">${r.subject}</td>
         <td class="px-4 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">${r.staff}</td>
-        <td class="px-4 py-4"><span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${statusStyles[r.status]}">${statusText(r.status)}</span></td>
+        <td class="px-4 py-4"><span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${statusStyles[normalizeStatus(r.ticketStatus || r.status || '')]}">${statusText(r.ticketStatus || r.status || '')}</span></td>
         <td class="px-4 py-4"><span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${priorityStyles[r.priority]}">${label(r.priority)}</span></td>
         <td class="px-8 py-4">
           <div class="flex items-center gap-2">
@@ -1194,7 +1219,7 @@
 
     let filtered = currentFilter === 'all' ? rows.slice()
       : currentFilter === 'today' ? rows.filter(r => r.date === getTodayPHPStyle())
-      : rows.filter(r => r.status === currentFilter);
+      : rows.filter(r => rowStatus(r) === currentFilter);
 
     if (staff) filtered = filtered.filter(r => r.staff === staff);
     if (channel) filtered = filtered.filter(r => r.type === channel);
@@ -1209,7 +1234,7 @@
         (r.subject && r.subject.toLowerCase().includes(search)) ||
         (r.staff && r.staff.toLowerCase().includes(search)) ||
         (typeText(r.type) && typeText(r.type).toLowerCase().includes(search)) ||
-        (statusText(r.status) && statusText(r.status).toLowerCase().includes(search)) ||
+        (statusText(r.ticketStatus || r.status || '') && statusText(r.ticketStatus || r.status || '').toLowerCase().includes(search)) ||
         (r.priority && r.priority.toLowerCase().includes(search))
       );
     }
@@ -1296,7 +1321,10 @@
 
     // Average response time from resolved/completed records with a parseable resp_time
     const resolvedMinutes = rows
-      .filter(r => r.status === 'completed' || r.status === 'resolved')
+      .filter(r => {
+        const s = rowStatus(r);
+        return s === 'completed' || s === 'resolved';
+      })
       .map(r => parseRespMinutes(r.resp))
       .filter(m => m !== null);
     const avgMinutes = resolvedMinutes.length
@@ -1304,10 +1332,16 @@
       : null;
 
     const recentResolvedMinutes = recentWindow
-      .filter(r => r.status === 'completed' || r.status === 'resolved')
+      .filter(r => {
+        const s = rowStatus(r);
+        return s === 'completed' || s === 'resolved';
+      })
       .map(r => parseRespMinutes(r.resp)).filter(m => m !== null);
     const priorResolvedMinutes = priorWindow
-      .filter(r => r.status === 'completed' || r.status === 'resolved')
+      .filter(r => {
+        const s = rowStatus(r);
+        return s === 'completed' || s === 'resolved';
+      })
       .map(r => parseRespMinutes(r.resp)).filter(m => m !== null);
     const recentAvg = recentResolvedMinutes.length ? recentResolvedMinutes.reduce((a,b)=>a+b,0)/recentResolvedMinutes.length : null;
     const priorAvg = priorResolvedMinutes.length ? priorResolvedMinutes.reduce((a,b)=>a+b,0)/priorResolvedMinutes.length : null;
@@ -1365,7 +1399,7 @@
         </div>
         <div class="text-right shrink-0">
           <p class="text-xs text-slate-400 dark:text-slate-500 mb-1 whitespace-nowrap">${r.date}</p>
-          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${statusStyles[r.status]}">${statusText(r.status)}</span>
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${statusStyles[rowStatus(r)]}">${statusText(r.ticketStatus || r.status || '')}</span>
         </div>
       </div>
     `).join('');
@@ -1428,8 +1462,8 @@
     document.getElementById('modalSubtitle').textContent = `${r.subject || 'Communication Thread'} — ${r.date}`;
 
     const statusEl = document.getElementById('modalStatus');
-    statusEl.textContent = statusText(r.status);
-    statusEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ' + statusStyles[r.status];
+    statusEl.textContent = statusText(r.ticketStatus || r.status || '');
+    statusEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ' + statusStyles[rowStatus(r)];
 
     const priorityEl = document.getElementById('modalPriorityBadge');
     priorityEl.textContent = label(r.priority) + ' Priority';
@@ -1465,7 +1499,7 @@
       { label: 'Logged', sub: `${r.date} · ${r.staff || 'System'}`, color: 'bg-blue-500' },
     ];
     if (r.staff) timelineSteps.push({ label: `Assigned to ${r.staff}`, sub: 'Staff', color: 'bg-slate-300 dark:bg-slate-600' });
-    if (r.status === 'in_progress') timelineSteps.push({ label: 'In Progress', sub: r.staff || '', color: 'bg-blue-400' });
+    if (r.status === 'in_progress') timelineSteps.push({ label: 'In Progress', sub: r.staff || '', color: 'bg-purple-400' });
     if (r.status === 'escalated') timelineSteps.push({ label: 'Escalated', sub: r.staff || '', color: 'bg-purple-500' });
     if (r.status === 'completed' || r.status === 'resolved') timelineSteps.push({ label: 'Resolved', sub: r.staff || '', color: 'bg-[#10B981]' });
     if (r.status === 'cancelled') timelineSteps.push({ label: 'Cancelled', sub: r.staff || '', color: 'bg-red-500' });
@@ -1804,7 +1838,7 @@
       row.Type = typeText(r.type);
       row.Subject = r.subject;
       if (includeStaff) row.Staff = r.staff;
-      if (includeStatus) row.Status = statusText(r.status);
+      if (includeStatus) row.Status = statusText(r.ticketStatus || r.status || '');
       if (includePriority) row.Priority = label(r.priority);
       if (includeResp) row['Resp Time'] = r.resp;
       return row;
@@ -1830,7 +1864,7 @@
         <td class="py-2 pr-3 text-slate-500 whitespace-nowrap">${r.date}</td>
         <td class="py-2 pr-3 text-slate-500 whitespace-nowrap">${typeText(r.type)}</td>
         <td class="py-2 pr-3 text-slate-600 whitespace-nowrap">${r.subject}</td>
-        <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap ${statusStyles[r.status]}">${statusText(r.status)}</span></td>
+        <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap ${statusStyles[rowStatus(r)]}">${statusText(r.ticketStatus || r.status || '')}</span></td>
         <td class="py-2 pr-3 text-slate-500 whitespace-nowrap">${r.resp}</td>
       </tr>
     `).join('');

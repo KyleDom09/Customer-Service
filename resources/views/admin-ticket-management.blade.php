@@ -169,7 +169,7 @@
                                 data-description="{{ $ticket->description }}"
                                 data-search="{{ strtolower($ticket->customer_name . ' ' . $ticket->customer_email . ' ' . $ticket->subject . ' TK-' . str_pad($ticket->id, 4, '0', STR_PAD_LEFT) . ' ' . $ticket->category) }}"
                                 data-id="{{ $ticket->id }}"
-                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}', {{ $ticket->id }}, '{{ $ticket->agent }}', '{{ $ticket->agent_initials }}', '{{ $ticket->agent_bg }}', this)"
+                                onclick="openDrawer('#TK-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}', '{{ $ticket->name }}', '{{ $ticket->email }}', '{{ $ticket->initials }}', '{{ $ticket->subject }}', '{{ $ticket->category }}', '{{ $ticket->priority }}', '{{ $ticket->status }}', '{{ $ticket->avatar_bg }}', {{ $ticket->id }}, {{ $ticket->agent_id ?? 'null' }}, '{{ $ticket->agent }}', '{{ $ticket->agent_initials }}', '{{ $ticket->agent_bg }}', this)"
                                 class="ticket-row hover:bg-slate-50/50 transition-colors cursor-pointer">
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center gap-2.5">
@@ -310,6 +310,7 @@
                     <div class="flex items-center gap-2 flex-1">
                         <div id="drawer-agent-initials" class="w-6 h-6 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-[10px] shrink-0">MC</div>
                         <select name="agent_id" id="drawer-agent-select" onchange="adminChangeAgent()" class="font-semibold text-slate-700 bg-transparent outline-none flex-1 cursor-pointer">
+                            <option value="" data-name="Unassigned" data-initials="">Unassigned</option>
                             @foreach ($agents as $agentOption)
                                 <option value="{{ $agentOption->id }}" data-name="{{ $agentOption->name }}" data-initials="{{ $agentOption->initials ?? '' }}" data-rating="{{ $agentOption->rating ?? '—' }}">{{ $agentOption->name }}</option>
                             @endforeach
@@ -678,7 +679,7 @@
         }
 
         // Ticket Detail Drawer Actions
-        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId, agentName, agentInitials, agentBg, rowEl) {
+        function openDrawer(id, name, email, initials, subject, category, priority, status, avatarBg, ticketId, agentId, agentName, agentInitials, agentBg, rowEl) {
             // FIX: set the form actions dynamically based on the ticket being opened
             var baseUrl = "{{ url('/customer-service/ticket-management') }}";
             document.getElementById('ticket-edit-form').action = baseUrl + '/' + ticketId;
@@ -720,8 +721,10 @@
             currentAgentBg = agentBg || 'bg-[#E0F2FE] text-[#0369A1]';
             currentCustomerName = name;
             const agentSelect = document.getElementById('drawer-agent-select');
-            if ([...agentSelect.options].some(o => o.value === currentAgentName)) {
-                agentSelect.value = currentAgentName;
+            if (agentId) {
+                agentSelect.value = String(agentId);
+            } else {
+                agentSelect.value = '';
             }
 
             document.getElementById('drawer-agent-initials').innerText = currentAgentInitials;

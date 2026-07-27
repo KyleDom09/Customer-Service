@@ -15,7 +15,9 @@ class CommunicationController extends Controller
      */
     public function index()
     {
-        $communications = Communication::orderByDesc('id')->get();
+        $communications = Communication::with(['agent', 'ticket.agentModel'])
+            ->orderByDesc('id')
+            ->get();
 
         // No follow-up table/columns exist yet on the communications schema,
         // so this stays empty for now — the view already handles an empty
@@ -116,7 +118,10 @@ class CommunicationController extends Controller
      */
     public function dashboardHistory()
     {
-        $recent = Communication::orderByDesc('id')->take(5)->get();
+        $recent = Communication::with(['agent', 'ticket.agentModel'])
+            ->orderByDesc('id')
+            ->take(5)
+            ->get();
 
         return response()->json(['recent' => $recent]);
     }
