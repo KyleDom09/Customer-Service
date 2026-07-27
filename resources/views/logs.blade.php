@@ -587,7 +587,7 @@
 
     // Log Pagination
     let logCurrentPage = 1;
-    const logsPerPage = 4;
+    const logsPerPage = 7;
 
     function renderLogPagination() {
         const allRows = Array.from(document.querySelectorAll('#logTableBody .log-row'));

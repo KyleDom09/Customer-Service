@@ -604,7 +604,7 @@
 
         // Agent Pagination
     let agentCurrentPage = 1;
-    const agentsPerPage = 3;
+    const agentsPerPage = 7;
 
     function renderAgentPagination() {
         const allRows = Array.from(document.querySelectorAll('#agentTableBody .agent-row'));
