@@ -522,8 +522,8 @@
                                 <h3 class="text-lg font-bold text-blue-900 group-hover:text-blue-600 transition">Shipping & Transit Schedules</h3>
                                 <p class="text-slate-500 text-sm mt-2 leading-relaxed">Track standard processing rules, regional delivery zones, and carrier delay procedures.</p>
                                 <div class="flex items-center space-x-4 mt-6 text-xs text-slate-400">
-                                    <span><i class="fas fa-undo mr-1"></i> Returns</span>
-                                    <span><i class="fas fa-hand-holding-usd mr-1"></i> Refunds</span>
+                                    <span><i class="fas fa-undo mr-1"></i> View</span>
+                                    <span><i class="fas fa-hand-holding-usd mr-1"></i> Schedules</span>
                                 </div>
                             </div>
 
@@ -531,8 +531,8 @@
                                 <h3 class="text-lg font-bold text-blue-900 group-hover:text-blue-600 transition">Returns, Refunds & Warranty</h3>
                                 <p class="text-slate-500 text-sm mt-2 leading-relaxed">Review product return eligibility, warranty coverage terms, and standard refund timelines.</p>
                                 <div class="flex items-center space-x-4 mt-6 text-xs text-slate-400">
-                                    <span><i class="fas fa-store mr-1"></i> Vendors</span>
-                                    <span><i class="fas fa-shopping-cart mr-1"></i> Orders</span>
+                                    <span><i class="fas fa-store mr-1"></i> Returns</span>
+                                    <span><i class="fas fa-shopping-cart mr-1"></i> Refunds</span>
                                 </div>
                             </div>
                         </div>
