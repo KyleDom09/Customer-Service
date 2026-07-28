@@ -523,8 +523,6 @@
                 <h1 class="text-[#1e3a8a] font-extrabold text-sm tracking-wide drop-shadow-sm">Service Level Agreement Performance</h1>
                 
                 <div class="flex items-center gap-4">
-                    <button class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-95 text-slate-500 text-xs flex items-center justify-center font-bold border border-slate-200/50 cursor-pointer transition-all shadow-md">?</button>
-                    
                     <div class="relative cursor-pointer" @click="notificationsOpen = !notificationsOpen" @click.away="notificationsOpen = false">
                         <div class="relative hover:scale-110 active:scale-95 transition-transform" :class="notifyPulse ? 'animate-ring' : ''">
                             <svg class="w-6 h-6 text-slate-500 hover:text-blue-600 transition-colors drop-shadow-sm" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
