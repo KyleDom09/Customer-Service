@@ -216,42 +216,7 @@
 
       </div>
 
-      <!-- Recent Activity + Upcoming Follow-ups widgets -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-
-        <!-- Recent Activity (built from real communications data) -->
-        <div class="stat-card-fade bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm p-6 transition-colors">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-slate-800 dark:text-slate-100">Recent Activity</h3>
-            <div class="relative">
-              <button id="recentActivityMenuBtn" type="button" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                <i data-lucide="more-horizontal" class="w-5 h-5"></i>
-              </button>
-              <div id="recentActivityMenu" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-[#1e1e1e] rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 z-10 py-1">
-                <button type="button" onclick="setActiveFilterTab('all'); document.getElementById('recentActivityMenu').classList.add('hidden');" class="w-full text-left px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">View all</button>
-                <button type="button" onclick="window.location.reload();" class="w-full text-left px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">Refresh</button>
-              </div>
-            </div>
-          </div>
-          <div id="recentActivityList" class="space-y-3">
-            <!-- injected by JS -->
-          </div>
-        </div>
-
-        <!-- Upcoming Follow-ups (sample/static data — see note below the widget) -->
-        <div class="stat-card-fade bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm p-6 transition-colors">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-slate-800 dark:text-slate-100">Upcoming Follow-ups</h3>
-            <button type="button" id="addFollowUpBtn" class="flex items-center gap-1 text-xs font-semibold text-[#10B981] hover:text-emerald-600 px-2 py-1 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
-            </button>
-          </div>
-          <div id="followUpsList" class="space-y-3">
-            <!-- sample items, rendered by JS -->
-          </div>
-        </div>
-
-      </div>
+      <!-- Recent Activity + Upcoming Follow-ups widgets removed -->
 
       <!-- Communication History -->
       <div class="bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-sm overflow-hidden transition-colors">
@@ -1006,6 +971,7 @@
   };
 
   const priorityStyles = {
+    critical: 'bg-red-50 dark:bg-red-500/20 text-red-600 dark:text-red-400',
     high: 'bg-red-100 dark:bg-red-500/20 text-red-500 dark:text-red-400',
     medium: 'bg-orange-100 dark:bg-orange-500/20 text-orange-500 dark:text-orange-400',
     low: 'bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-300',
@@ -1018,26 +984,7 @@
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  // ================= Upcoming Follow-ups Widget =================
-  // `followUps` comes from a real DB query (follow_up_date >= now(), ordered soonest first)
-  function renderFollowUps() {
-    const list = document.getElementById('followUpsList');
-
-    if (!followUps.length) {
-      list.innerHTML = `<p class="text-sm text-slate-400 dark:text-slate-500 py-2">No upcoming follow-ups scheduled.</p>`;
-      return;
-    }
-
-    list.innerHTML = followUps.map(f => `
-      <div class="flex items-center justify-between gap-3 py-2 border-b border-slate-50 dark:border-slate-700/50 last:border-0">
-        <div class="min-w-0">
-          <p class="text-sm font-semibold text-slate-700 dark:text-slate-100 truncate">${f.name}</p>
-          <p class="text-xs text-slate-400 dark:text-slate-500">${formatFollowUpDate(f.date)}</p>
-        </div>
-        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 ${priorityStyles[f.priority] || priorityStyles.medium}">${label(f.priority)}</span>
-      </div>
-    `).join('');
-  }
+  // Upcoming Follow-ups widget removed (UI simplified)
 
   function normalizeStatus(s) {
     if (!s) return '';
@@ -1139,7 +1086,7 @@
         <td class="px-4 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">${r.subject}</td>
         <td class="px-4 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">${r.staff}</td>
         <td class="px-4 py-4"><span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${statusStyles[normalizeStatus(r.ticketStatus || r.status || '')]}">${statusText(r.ticketStatus || r.status || '')}</span></td>
-        <td class="px-4 py-4"><span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${priorityStyles[r.priority]}">${label(r.priority)}</span></td>
+        <td class="px-4 py-4"><span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${priorityStyles[(r.priority||'').toLowerCase()] || priorityStyles.low}">${label(r.priority)}</span></td>
         <td class="px-8 py-4">
           <div class="flex items-center gap-2">
             <button class="view-btn w-8 h-8 flex items-center justify-center rounded-lg border border-[#10B981] text-[#10B981] hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" data-name="${r.name}" title="View">
@@ -1379,37 +1326,12 @@
     return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}`;
   }
 
-  // ================= Recent Activity Widget =================
-  // Uses the same `rows` array (already latest-first from the controller's ->latest('id') query)
-  function renderRecentActivity() {
-    const list = document.getElementById('recentActivityList');
-    const recent = rows.slice(0, 5);
-
-    if (!recent.length) {
-      list.innerHTML = `<p class="text-sm text-slate-400 dark:text-slate-500 py-2">No recent communications yet.</p>`;
-      return;
-    }
-
-    list.innerHTML = recent.map(r => `
-      <div class="flex items-center gap-3 py-2 border-b border-slate-50 dark:border-slate-700/50 last:border-0">
-        <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0" style="background:${r.color}">${r.initials}</div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-slate-700 dark:text-slate-100 truncate">${r.name}</p>
-          <p class="text-xs text-slate-400 dark:text-slate-500 truncate">${r.subject}</p>
-        </div>
-        <div class="text-right shrink-0">
-          <p class="text-xs text-slate-400 dark:text-slate-500 mb-1 whitespace-nowrap">${r.date}</p>
-          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${statusStyles[rowStatus(r)]}">${statusText(r.ticketStatus || r.status || '')}</span>
-        </div>
-      </div>
-    `).join('');
-  }
+  // Recent Activity widget removed (UI simplified)
 
   populateStaffFilter();
   updateStats();
   applyAllFilters();
-  renderRecentActivity();
-  renderFollowUps();
+  // Recent Activity and Upcoming Follow-ups widgets removed
 
   document.getElementById('statPendingCard').addEventListener('click', () => setActiveFilterTab('pending'));
   document.getElementById('statTodayCard').addEventListener('click', () => setActiveFilterTab('today'));
@@ -1467,7 +1389,7 @@
 
     const priorityEl = document.getElementById('modalPriorityBadge');
     priorityEl.textContent = label(r.priority) + ' Priority';
-    priorityEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ' + priorityStyles[r.priority];
+    priorityEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ' + (priorityStyles[(r.priority||'').toLowerCase()] || priorityStyles.low);
 
     document.getElementById('modalAvatar').textContent = r.initials;
     document.getElementById('modalAvatar').style.background = r.color;
@@ -1710,7 +1632,7 @@
     followUpModal.classList.remove('flex');
   }
 
-  document.getElementById('addFollowUpBtn').addEventListener('click', openFollowUpModal);
+  // Add follow-up button removed from UI; modal still available if needed
   document.getElementById('followUpCloseBtn').addEventListener('click', closeFollowUpModal);
   document.getElementById('followUpCancelBtn').addEventListener('click', closeFollowUpModal);
   document.getElementById('followUpOverlay').addEventListener('click', closeFollowUpModal);
