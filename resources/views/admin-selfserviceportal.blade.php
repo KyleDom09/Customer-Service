@@ -976,10 +976,6 @@
                                 <h3 class="text-xl font-bold text-blue-900">Returns, Refunds & Warranty</h3>
                                 <p class="text-xs text-slate-400 mt-1">Review return eligibility, warranty protection guidelines, and credit processing timelines.</p>
                             </div>
-                            <button @click="isRefundFormOpen = true" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800">
-                                <i class="fas fa-paper-plane"></i>
-                                New Return Request
-                            </button>
                         </div>
 
                         <div class="rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-slate-50 p-5">
